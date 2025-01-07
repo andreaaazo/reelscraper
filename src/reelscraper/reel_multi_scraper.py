@@ -1,33 +1,33 @@
 import concurrent.futures
 from typing import List, Dict
-from reelscraper import InstaScraper
+from reelscraper import ReelScraper
 from .utils import AccountManager
 
 
 class ReelMultiScraper:
     """
-    [ReelMultiScraper] retrieves reels for multiple Instagram accounts in parallel using [InstaScraper].
+    [ReelMultiScraper] retrieves reels for multiple Instagram accounts in parallel using [ReelScraper].
 
     :param [accounts_file]: Path to a text file containing one username per line
-    :param [scraper]: Instance of [InstaScraper] used to fetch reels
+    :param [scraper]: Instance of [ReelScraper] used to fetch reels
     :param [max_workers]: Maximum number of threads to use for concurrent requests
     """
 
     def __init__(
         self,
         accounts_file: str,
-        scraper: InstaScraper,
+        scraper: ReelScraper,
         max_workers: int = 5,
     ) -> None:
         """
         Initializes [MultiAccountScraper] by loading account names and storing references.
 
         :param [accounts_file]: Path to a text file containing one username per line
-        :param [scraper]: Instance of [InstaScraper] used to fetch reels
+        :param [scraper]: Instance of [ReelScraper] used to fetch reels
         :param [max_workers]: Maximum number of threads to use for concurrent requests
         """
         self.account_manager: AccountManager = AccountManager(accounts_file)
-        self.scraper: InstaScraper = scraper
+        self.scraper: ReelScraper = scraper
         self.max_workers: int = max_workers
         self.accounts: List[str] = self.account_manager.get_accounts()
 
