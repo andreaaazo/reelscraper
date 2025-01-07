@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import mock_open, patch
-from src.reelscraper.utils import AccountManager
+from reelscraper.utils import AccountManager
 
 
 class TestAccountManager(unittest.TestCase):
