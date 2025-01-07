@@ -24,19 +24,10 @@ Before you embark on your data-scraping journey, ensure that you have **Python 3
 
 ### Steps
 
-1. **Clone the repository**  
+1. **Installation**  
    ```bash
    git clone https://github.com/YourUsername/multi-instagram-scraper.git
    ```
-2. **Navigate to the project directory**  
-   ```bash
-   cd multi-instagram-scraper
-   ```
-3. **Install dependencies**  
-   ```bash
-   pip install -r requirements.txt
-   ```
-   By the end of this step, you’re practically an Instagram-savvy wizard—just without the pointy hat.
 
 ## 🚀 Usage
 
