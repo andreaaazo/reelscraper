@@ -74,7 +74,7 @@ Before submitting, please make sure your changes are well-tested, follow our cod
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE). Feel free to do with it as you please, but please don’t blame us if your dog decides to open an Instagram account and become the next fluff-influencer.
+This project is licensed under the [MIT License](https://github.com/andreaaazo/instascrape/blob/master/LICENSE.txt). Feel free to do with it as you please, but please don’t blame us if your dog decides to open an Instagram account and become the next fluff-influencer.
 
 ## 🙏 Acknowledgments
 
