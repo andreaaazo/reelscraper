@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=65.5.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "instascraper"  # The package name you want to install
+version = "0.1.0"
+description = "A simple Instagram scraping library."
+authors = [
+    { name="Andrea Zorzi", email="zorzi.andrea@outlook.com" }
+]
+readme = "README.md"
+license = {text="LICENSE.txt"}
+requires-python = ">=3.11.9"
+keywords = ["instagram", "scraper"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
+
+# If you have external dependencies:
+dependencies = [
+    "certifi==2024.12.14",
+    "charset-normalizer==3.4.1",
+    "fake-useragent==2.0.3",
+    "idna==3.10",
+    "requests==2.32.3",
+    "urllib3==2.3.0",
+]
+
+# If you want to automatically include all subpackages from `src`:
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["instascraper"]
+include-package-data = true
