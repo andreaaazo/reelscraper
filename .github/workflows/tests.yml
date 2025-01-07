@@ -1,4 +1,4 @@
-name: Test on Multiple Python Versions
+name: Make Tests on Python
 
 on:
   push:

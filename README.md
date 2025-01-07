@@ -1,4 +1,5 @@
 [![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)
+[![Make Tests on Python](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)
 
 <h1 align="center">
   Reel Scraper
