@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "reelscraper"
 version = "0.1.0"
-description = "A simple Instagram reels scraping library."
+description = "A convenient way to harvest Reels data without breaking a sweat—or Instagram's TOS"
 authors = [
     { name="Andrea Zorzi", email="zorzi.andrea@outlook.com" }
 ]
@@ -30,11 +30,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 
-[project.urls]
-"Home" = "https://github.com/yourusername/reelscraper"
-"Bug Tracker" = "https://github.com/yourusername/reelscraper/issues"
-"Documentation" = "https://yourusername.github.io/reelscraper"
-
 dependencies = [
     "certifi==2024.12.14",
     "charset-normalizer==3.4.1",
@@ -44,23 +39,18 @@ dependencies = [
     "urllib3==2.3.0"
 ]
 
-# Optional: If you have a command-line interface (CLI) entry point:
-# This lets users install your package and run `reelscraper` from the terminal.
-# Provide a function in your code that implements the CLI, e.g. `src/instascraper/cli.py:main`.
-# Remove/adjust if not needed.
+
+[project.urls]
+"Home" = "https://github.com/andreaaazo/reelscraper"
+"Bug Tracker" = "https://github.com/andreaaazo/reelscraper/issues"
+"Documentation" = "https://github.com/andreaaazo/reelscraper/blob/master/README.md"
+
+
 [project.scripts]
 reelscraper = "instascraper.cli:main"
 
-# Optional: If you're distributing type hints and want third-party tools
-# to consider them, you can include a "py.typed" marker file.
-# [project.optional-dependencies]
-# tests = ["pytest>=7.0", "pytest-cov>=4.0"]
-
 [tool.setuptools]
 package-dir = { "" = "src" }
-packages = ["instascraper"]
+packages = ["reelscraper"]
 include-package-data = true
 
-# If your package uses compiled extensions, you could add [tool.setuptools.extension] configurations here.
-# If you want auto-discovery of subpackages:
-# packages = ["find:"]
