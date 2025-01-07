@@ -48,7 +48,7 @@ class TestInstagramAPI(unittest.TestCase):
         self.assertEqual(result, expected)
 
     @patch(
-        "instascraper.utils.instagram_api.UserAgent"
+        "reelscraper.utils.instagram_api.UserAgent"
     )  # <-- patch where UserAgent is imported
     def test__get_default_headers(self, mock_ua):
         """
@@ -149,7 +149,7 @@ class TestInstagramAPI(unittest.TestCase):
             self.api._get_headers_for_reels()
         self.assertIn("CSRF Token empty", str(ctx.exception))
 
-    @patch("instascraper.utils.instagram_api.UserAgent")  # <-- same patch target
+    @patch("reelscraper.utils.instagram_api.UserAgent")  # <-- same patch target
     def test__get_headers_for_reels_success(self, mock_ua):
         """
         Test that _get_headers_for_reels returns headers including the CSRF token

@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from .utils import InstagramAPI, Extractor
+from reelscraper.utils import InstagramAPI, Extractor
 
 
 class ReelScraper:

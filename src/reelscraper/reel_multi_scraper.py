@@ -1,7 +1,7 @@
 import concurrent.futures
 from typing import List, Dict
-from reelscraper import ReelScraper
-from .utils import AccountManager
+from reelscraper.utils.account_manager import AccountManager
+from reelscraper.reel_scraper import ReelScraper
 
 
 class ReelMultiScraper:
