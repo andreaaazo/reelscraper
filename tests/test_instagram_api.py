@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import requests
 
-from instascraper.utils import InstagramAPI
+from reelscraper.utils import InstagramAPI
 
 
 class TestInstagramAPI(unittest.TestCase):

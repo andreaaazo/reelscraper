@@ -1,12 +1,12 @@
 import concurrent.futures
 from typing import List, Dict
-from instascraper import InstaScraper
+from reelscraper import InstaScraper
 from .utils import AccountManager
 
 
-class MultiInstaScraper:
+class ReelMultiScraper:
     """
-    [MultiAccountScraper] retrieves reels for multiple Instagram accounts in parallel using [InstaScraper].
+    [ReelMultiScraper] retrieves reels for multiple Instagram accounts in parallel using [InstaScraper].
 
     :param [accounts_file]: Path to a text file containing one username per line
     :param [scraper]: Instance of [InstaScraper] used to fetch reels

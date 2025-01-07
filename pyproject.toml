@@ -1,35 +1,66 @@
 [build-system]
-requires = ["setuptools>=65.5.1", "wheel"]
+requires = [
+    "setuptools>=65.5.1",
+    "wheel",
+    "build"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "instascraper"  # The package name you want to install
+name = "reelscraper"
 version = "0.1.0"
-description = "A simple Instagram scraping library."
+description = "A simple Instagram reels scraping library."
 authors = [
     { name="Andrea Zorzi", email="zorzi.andrea@outlook.com" }
 ]
 readme = "README.md"
-license = {text="LICENSE.txt"}
+license = { text="LICENSE.txt" }
 requires-python = ">=3.11.9"
-keywords = ["instagram", "scraper"]
+keywords = [
+    "instagram",
+    "scraper",
+    "reels"
+]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License"
 ]
 
-# If you have external dependencies:
+[project.urls]
+"Home" = "https://github.com/yourusername/reelscraper"
+"Bug Tracker" = "https://github.com/yourusername/reelscraper/issues"
+"Documentation" = "https://yourusername.github.io/reelscraper"
+
 dependencies = [
     "certifi==2024.12.14",
     "charset-normalizer==3.4.1",
     "fake-useragent==2.0.3",
     "idna==3.10",
     "requests==2.32.3",
-    "urllib3==2.3.0",
+    "urllib3==2.3.0"
 ]
 
-# If you want to automatically include all subpackages from `src`:
+# Optional: If you have a command-line interface (CLI) entry point:
+# This lets users install your package and run `reelscraper` from the terminal.
+# Provide a function in your code that implements the CLI, e.g. `src/instascraper/cli.py:main`.
+# Remove/adjust if not needed.
+[project.scripts]
+reelscraper = "instascraper.cli:main"
+
+# Optional: If you're distributing type hints and want third-party tools
+# to consider them, you can include a "py.typed" marker file.
+# [project.optional-dependencies]
+# tests = ["pytest>=7.0", "pytest-cov>=4.0"]
+
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 packages = ["instascraper"]
 include-package-data = true
+
+# If your package uses compiled extensions, you could add [tool.setuptools.extension] configurations here.
+# If you want auto-discovery of subpackages:
+# packages = ["find:"]

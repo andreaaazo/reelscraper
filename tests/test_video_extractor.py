@@ -1,5 +1,5 @@
 import unittest
-from instascraper.utils import Extractor
+from reelscraper.utils import Extractor
 
 
 class TestExtractor(unittest.TestCase):

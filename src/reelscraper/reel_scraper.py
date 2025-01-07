@@ -2,9 +2,9 @@ from typing import Dict, List, Optional
 from .utils import InstagramAPI, Extractor
 
 
-class InstaScraper:
+class ReelScraper:
     """
-    [InstaScraper] provides methods to gather Instagram Reels data via composition of [InstagramAPI] and [Extractor].
+    [ReelScraper] provides methods to gather Instagram Reels data via composition of [InstagramAPI] and [Extractor].
 
     :param [timeout]: Connection timeout in seconds
     :param [proxy]: Proxy string or None
@@ -12,7 +12,7 @@ class InstaScraper:
 
     def __init__(self, timeout: int, proxy: Optional[str]) -> None:
         """
-        Initializes [InstaScraper] with an [InstagramAPI] and an [Extractor].
+        Initializes [ReelScraper] with an [InstagramAPI] and an [Extractor].
 
         :param [timeout]: Connection timeout in seconds
         :param [proxy]: Proxy string or None
