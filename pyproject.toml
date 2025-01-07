@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reelscraper"
-version = "0.1.0"
+version = ""
 description = "A convenient way to harvest Reels data without breaking a sweat—or Instagram's TOS"
 authors = [
     { name="Andrea Zorzi", email="zorzi.andrea@outlook.com" }
@@ -30,14 +30,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 
-dependencies = [
-    "certifi==2024.12.14",
-    "charset-normalizer==3.4.1",
-    "fake-useragent==2.0.3",
-    "idna==3.10",
-    "requests==2.32.3",
-    "urllib3==2.3.0"
-]
+dynamic = ["dependencies"]
 
 
 [project.urls]
@@ -54,3 +47,5 @@ package-dir = { "" = "src" }
 packages = ["reelscraper"]
 include-package-data = true
 
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
