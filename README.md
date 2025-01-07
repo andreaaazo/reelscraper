@@ -1,3 +1,5 @@
+[![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)
+
 <h1 align="center">
   Reel Scraper
   <br>
