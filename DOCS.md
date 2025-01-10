@@ -10,21 +10,20 @@ This documentation covers two classes: **[`ReelScraper`](#reelscraper)** and **[
 ## Table of Contents
 
 1. [ReelScraper](#reelscraper)  
-   1.1. [Overview](#reelscraper-overview)  
-   1.2. [Constructor](#reelscraper-constructor)  
-   1.3. [Methods](#reelscraper-methods)  
-       - [`_fetch_reels()`](#_fetch_reels)  
+   1.1. [Overview](#overview)  
+   1.2. [Constructor](#constructor)  
+   1.3. [Methods](#methods)  
        - [`get_user_reels()`](#get_user_reels)  
-   1.4. [Attributes](#reelscraper-attributes)  
-   1.5. [Example Usage](#reelscraper-example)  
+   1.4. [Attributes](#attributes)  
+   1.5. [Example Usage](#example)  
 
 2. [ReelMultiScraper](#reelmultiscraper)  
-   2.1. [Overview](#reelmultiscraper-overview)  
-   2.2. [Constructor](#reelmultiscraper-constructor)  
-   2.3. [Methods](#reelmultiscraper-methods)  
+   2.1. [Overview](#overview-1)  
+   2.2. [Constructor](#constructor-1)  
+   2.3. [Methods](#methods-1)  
        - [`scrape_accounts()`](#scrape_accounts)  
-   2.4. [Attributes](#reelmultiscraper-attributes)  
-   2.5. [Example Usage](#reelmultiscraper-example)  
+   2.4. [Attributes](#attributes-1)  
+   2.5. [Example Usage](#example-1)  
 
 3. [Frequently Asked Questions (FAQs)](#faqs)  
 4. [Additional Tips](#additional-tips)
@@ -33,7 +32,7 @@ This documentation covers two classes: **[`ReelScraper`](#reelscraper)** and **[
 
 ## ReelScraper
 
-### ReelScraper Overview
+### Overview
 
 The **`ReelScraper`** class is designed to fetch Instagram Reels for a single user at a time. It leverages two primary components:
 
@@ -44,7 +43,7 @@ The **`ReelScraper`** class is designed to fetch Instagram Reels for a single us
 
 ---
 
-### ReelScraper Constructor
+### Constructor
 
 ```python
 def __init__(self, timeout: int, proxy: Optional[str]) -> None:
@@ -67,45 +66,7 @@ def __init__(self, timeout: int, proxy: Optional[str]) -> None:
 
 ---
 
-### ReelScraper Methods
-
-#### `_fetch_reels()`
-
-```python
-def _fetch_reels(
-    self, username: str, max_id: Optional[str], max_retries: int
-) -> Dict:
-    """
-    Retrieves the first or subsequent batch of reels and returns a dictionary
-    containing items and paging info. Retries up to max_retries times if fetching fails.
-
-    :param username: The Instagram username whose reels are being fetched
-    :param max_id: A string representing the last reel’s identifier for pagination
-                   (None for the first batch of reels)
-    :param max_retries: Maximum retry attempts if a fetch fails
-    :return: Dictionary containing reel items and associated paging information
-    :raises Exception: If data cannot be fetched within the specified max_retries
-    """
-```
-
-**Key Points:**
-
-- Uses **`InstagramAPI`** to either fetch the first set of reels (`get_user_first_reels()`) or a subsequent paginated batch (`get_user_paginated_reels()`).
-- Will attempt multiple fetches (up to `max_retries`) before throwing an exception.
-- Returns a dictionary structured like:
-  ```python
-  {
-      "items": [...],
-      "paging_info": {
-          "max_id": "...",
-          "more_available": True/False
-      }
-  }
-  ```
-
-> **Tip**: If you hear your network groaning, it might be time to reduce `max_retries` or give your internet hamster a treat.
-
----
+### Methods
 
 #### `get_user_reels()`
 
@@ -138,7 +99,7 @@ def get_user_reels(
 
 ---
 
-### ReelScraper Attributes
+### Attributes
 
 - **`api`** (`InstagramAPI`):  
   Responsible for making the actual requests to Instagram’s endpoints, respecting your `timeout` and `proxy` settings.
@@ -148,7 +109,7 @@ def get_user_reels(
 
 ---
 
-### ReelScraper Example
+### Example
 
 ```python
 from reelscraper.utils import InstagramAPI, Extractor
@@ -177,7 +138,7 @@ Fetched 20 reels!
 
 ## ReelMultiScraper
 
-### ReelMultiScraper Overview
+### Overview
 
 The **`ReelMultiScraper`** class extends the functionality of `ReelScraper` to handle **multiple** Instagram usernames concurrently. If you have a text file brimming with Instagram handles, `ReelMultiScraper` is your sidekick for scraping them all in parallel.
 
@@ -185,7 +146,7 @@ The **`ReelMultiScraper`** class extends the functionality of `ReelScraper` to h
 
 ---
 
-### ReelMultiScraper Constructor
+### Constructor
 
 ```python
 def __init__(
@@ -221,7 +182,7 @@ def __init__(
 
 ---
 
-### ReelMultiScraper Methods
+### Methods
 
 #### `scrape_accounts()`
 
@@ -253,7 +214,7 @@ def scrape_accounts(self) -> Dict[str, List[Dict]]:
 
 ---
 
-### ReelMultiScraper Attributes
+### Attributes
 
 - **`account_manager`** (`AccountManager`):  
   Utility that reads and manages the list of accounts from `accounts_file`.
@@ -266,7 +227,7 @@ def scrape_accounts(self) -> Dict[str, List[Dict]]:
 
 ---
 
-### ReelMultiScraper Example
+### Example
 
 ```python
 from reelscraper.reel_scraper import ReelScraper
