@@ -15,7 +15,7 @@ authors = [
 ]
 readme = "README.md"
 license = { text="LICENSE.txt" }
-requires-python = ">=3.11.9"
+requires-python = ">=3.8"
 keywords = [
     "instagram",
     "scraper",
