@@ -1,0 +1,46 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out your repository
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python (3.11 or your preferred version)
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m pip install -e .
+          pip install pytest pytest-cov
+
+      # Step 4: Run tests and generate coverage report
+      # We run tests in `tests/` and measure coverage against `src/`
+      - name: Run tests
+        run: |
+          pytest tests --cov=src --cov-branch --cov-report=xml
+
+      # Step 5: Upload coverage report to Codecov
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: andreaaazo/reelscraper
+          files: coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
