@@ -8,14 +8,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reelscraper"
-version = "1.1.6"
+version = "1.1.7"
 description = "A convenient way to harvest Reels data without breaking a sweat—or Instagram's TOS"
 authors = [
     { name="Andrea Zorzi", email="zorzi.andrea@outlook.com" }
 ]
 readme = "README.md"
 license = { text="LICENSE.txt" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = [
     "instagram",
     "scraper",
