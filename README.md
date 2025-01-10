@@ -1,5 +1,5 @@
 [![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)
-[![Python 3.11](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)
+[![Build](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)
 [![Code Tests Coverage](https://codecov.io/gh/andreaaazo/reelscraper/branch/master/graph/badge.svg)](https://codecov.io/gh/andreaaazo/reelscraper)
 
 <h1 align="center">
@@ -25,7 +25,7 @@ Scrape Instagram Reels data with ease—single or multiple accounts at once—us
 
 ## 💻 Installation
 
-Reel Scraper requires **Python 3.11.9+**. Install it from PyPI:
+Reel Scraper requires **Python 3.9+**. Install it from PyPI:
 
 ```bash
 pip install reelscraper
