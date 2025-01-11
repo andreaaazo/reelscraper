@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reelscraper"
-version = "1.3.8"
+version = "1.3.9"
 description = "A convenient way to harvest Reels data without breaking a sweat—or Instagram's TOS"
 authors = [
     { name="Andrea Zorzi", email="zorzi.andrea@outlook.com" }

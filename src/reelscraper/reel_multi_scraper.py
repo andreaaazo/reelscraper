@@ -34,7 +34,11 @@ class ReelMultiScraper:
         self.max_workers: int = max_workers
         self.accounts: List[str] = self.account_manager.get_accounts()
 
-    def scrape_accounts(self, max_posts: Optional[int] = None) -> List[Dict]:
+    def scrape_accounts(
+        self,
+        max_posts_per_profile: Optional[int] = None,
+        max_retires_per_profile: Optional[int] = None,
+    ) -> List[Dict]:
         """
         Scrapes reels for each account in parallel and returns results in a dictionary.
 
@@ -47,7 +51,10 @@ class ReelMultiScraper:
         ) as executor:
             future_to_username = {
                 executor.submit(
-                    self.scraper.get_user_reels, username, max_posts
+                    self.scraper.get_user_reels,
+                    username,
+                    max_posts_per_profile,
+                    max_retires_per_profile,
                 ): username
                 for username in self.accounts
             }
@@ -57,8 +64,6 @@ class ReelMultiScraper:
                 try:
                     reels = future.result()
                     results.append(reels)
-                    if self.logger_manager is not None:
-                        self.logger_manager.log_account_success(username, len(reels))
                 except Exception:
                     if self.logger_manager is not None:
                         self.logger_manager.log_account_error(username)

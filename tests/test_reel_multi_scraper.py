@@ -120,14 +120,7 @@ class TestReelMultiScraper(unittest.TestCase):
         )
 
         # Esegue lo scraping.
-        results = multi_scraper.scrape_accounts(max_posts=10)
-
-        # Poiché il risultato è una lista (l'ordine non è garantito), verifichiamo:
-        # - Il numero totale di successi (dei log) deve essere uguale al numero di account.
-        success_logs = [
-            call for call in self.dummy_logger.calls if call[0] == "success"
-        ]
-        self.assertEqual(len(success_logs), len(self.accounts))
+        results = multi_scraper.scrape_accounts(max_posts_per_profile=10)
 
         # Controlla che, per ogni risultato, il numero di reels corrisponda a quanto atteso.
         # Poiché non abbiamo la mapping username → risultato, verifichiamo solo i conteggi.
@@ -156,7 +149,7 @@ class TestReelMultiScraper(unittest.TestCase):
             max_workers=3,
         )
 
-        results = multi_scraper.scrape_accounts(max_posts=10)
+        results = multi_scraper.scrape_accounts(max_posts_per_profile=10)
 
         # Dal momento che user2 genera un errore, ci aspettiamo che i risultati contengano solo quelli di user1 e user3.
         # Non conosciamo l'ordine nella lista, per cui verifichiamo i conteggi.
@@ -182,18 +175,13 @@ class TestReelMultiScraper(unittest.TestCase):
             max_workers=2,
         )
 
-        results = multi_scraper.scrape_accounts(max_posts=10)
+        results = multi_scraper.scrape_accounts(max_posts_per_profile=10)
 
         # Controlla che il numero di risultati ottenuti corrisponda al numero di account.
         self.assertEqual(len(results), len(self.accounts))
         # Verifica che ogni risultato sia una lista vuota.
         for reels in results:
             self.assertEqual(reels, [])
-        # Verifica che per ogni account sia stato registrato un log di successo.
-        success_logs = [
-            call for call in self.dummy_logger.calls if call[0] == "success"
-        ]
-        self.assertEqual(len(success_logs), len(self.accounts))
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ class ReelScraper:
         return response
 
     def get_user_reels(
-        self, username: str, max_posts: Optional[int] = None, max_retries: int = 10
+        self, username: str, max_posts: int = 50, max_retries: int = 10
     ) -> List[Dict]:
         """
         Gathers user reels up to [max_posts] using retry logic. Paginates through all available reels.
@@ -75,7 +75,6 @@ class ReelScraper:
             self.logger_manager.log_account_begin(username)
 
         reels: List[Dict] = []
-        max_posts = max_posts if max_posts is not None else 50
 
         # Fetch first batch of reels
         first_reels_response = self._fetch_reels(

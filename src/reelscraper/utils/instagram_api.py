@@ -124,7 +124,7 @@ class InstagramAPI:
             if "csrftoken" in response.cookies:
                 self.csrf_token = response.cookies["csrftoken"]
             return response.json()
-        except (requests.RequestException, ValueError):
+        except (requests.RequestException, json.JSONDecodeError, ValueError):
             return None
 
     def _get_user_id(self, base_data: Dict) -> Optional[str]:
@@ -197,7 +197,15 @@ class InstagramAPI:
             referer=f"{self.BASE_URL}/{username}/"
         )
         params: Dict[str, str] = {"username": username}
-        return self._handle_request("get", url, headers=headers, params=params)
+        response: Optional[Dict] = self._handle_request(
+            "get", url, headers=headers, params=params
+        )
+
+        if response is None or type(response) is not dict:
+            return None
+        if "data" in response:
+            return response
+        return None
 
     def get_user_paginated_data(self, user_id: str, end_cursor: str) -> Optional[Dict]:
         """
@@ -216,9 +224,15 @@ class InstagramAPI:
             "variables": json.dumps(variables),
         }
         headers: Dict[str, str] = self._get_default_headers()
-        return self._handle_request(
+        response: Optional[Dict] = self._handle_request(
             "get", self.GRAPHQL_URL, headers=headers, params=params
         )
+
+        if response is None or type(response) is not dict:
+            return None
+        if "data" in response:
+            return response
+        return None
 
     def get_user_first_reels(
         self, username: str, page_size: int = 11
@@ -244,7 +258,12 @@ class InstagramAPI:
             "include_feed_video": "true",
         }
         referer: str = f"{self.BASE_URL}/{username}/reels/"
-        return self._fetch_reels(payload, referer)
+        response: Optional[Dict] = self._fetch_reels(payload, referer)
+        if response is None and type(response) is not dict:
+            return None
+        if "items" in response:
+            return response
+        return None
 
     def get_user_paginated_reels(self, max_id: str, username: str) -> Optional[Dict]:
         """
@@ -270,6 +289,8 @@ class InstagramAPI:
         }
         referer: str = f"{self.BASE_URL}/{username}/reels/"
         response: Optional[Dict] = self._fetch_reels(payload, referer)
-        if not response or "items" not in response:
+        if response is None and type(response) is not dict:
             return None
-        return response
+        if "items" in response:
+            return response
+        return None
