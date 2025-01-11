@@ -1,5 +1,6 @@
 import concurrent.futures
-from typing import List, Dict
+from typing import List, Dict, Optional
+from reelscraper.utils.logging import LoggerManager
 from reelscraper.utils.account_manager import AccountManager
 from reelscraper.reel_scraper import ReelScraper
 
@@ -17,6 +18,7 @@ class ReelMultiScraper:
         self,
         accounts_file: str,
         scraper: ReelScraper,
+        logger_manager: Optional[LoggerManager] = None,
         max_workers: int = 5,
     ) -> None:
         """
@@ -28,6 +30,7 @@ class ReelMultiScraper:
         """
         self.account_manager: AccountManager = AccountManager(accounts_file)
         self.scraper: ReelScraper = scraper
+        self.logger_manager: Optional[LoggerManager] = logger_manager
         self.max_workers: int = max_workers
         self.accounts: List[str] = self.account_manager.get_accounts()
 
@@ -52,8 +55,10 @@ class ReelMultiScraper:
                 try:
                     reels = future.result()
                     results[username] = reels
-                    print(f"Done with account: {username}")
+                    if self.logger_manager is not None:
+                        self.logger_manager.log_account_success(username, len(reels))
                 except Exception:
-                    print(f"Error with account: {username}")
+                    if self.logger_manager is not None:
+                        self.logger_manager.log_account_error(username)
 
         return results

@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from reelscraper.utils import InstagramAPI, Extractor
+from reelscraper.utils import InstagramAPI, Extractor, LoggerManager
 
 
 class ReelScraper:
@@ -10,7 +10,12 @@ class ReelScraper:
     :param [proxy]: Proxy string or None
     """
 
-    def __init__(self, timeout: int, proxy: Optional[str]) -> None:
+    def __init__(
+        self,
+        timeout: int,
+        proxy: Optional[str] = None,
+        logger_manager: Optional[LoggerManager] = None,
+    ) -> None:
         """
         Initializes [ReelScraper] with an [InstagramAPI] and an [Extractor].
 
@@ -19,6 +24,7 @@ class ReelScraper:
         """
         self.api: InstagramAPI = InstagramAPI(timeout=timeout, proxy=proxy)
         self.extractor: Extractor = Extractor()
+        self.logger_manager: Optional[LoggerManager] = logger_manager
 
     def _fetch_reels(
         self, username: str, max_id: Optional[str], max_retries: int
@@ -34,7 +40,7 @@ class ReelScraper:
         :raises Exception: If data cannot be fetched within [max_retries] attempts
         """
         response = None
-        for _ in range(max_retries):
+        for retry in range(max_retries):
             if max_id is None:
                 response = self.api.get_user_first_reels(username)
             else:
@@ -43,7 +49,12 @@ class ReelScraper:
             if response is not None:
                 break
 
+            if self.logger_manager is not None:
+                self.logger_manager.log_retry(retry, max_retries, username)
+
         if response is None:
+            if self.logger_manager is not None:
+                self.logger_manager.log_account_error(username)
             raise Exception(f"Error fetching reels for username: {username}")
 
         return response
@@ -60,6 +71,9 @@ class ReelScraper:
         :return: List of reel information dictionaries
         :raises Exception: If initial reels cannot be fetched for [username]
         """
+        if self.logger_manager is not None:
+            self.logger_manager.log_account_begin(username)
+
         reels: List[Dict] = []
         max_posts = max_posts if max_posts is not None else 50
 
@@ -76,6 +90,8 @@ class ReelScraper:
             if reel_info:
                 reels.append(reel_info)
             if len(reels) >= max_posts:
+                if self.logger_manager is not None:
+                    self.logger_manager.log_account_success(username, len(reels))
                 return reels
 
         # Check pagination availability
@@ -90,8 +106,13 @@ class ReelScraper:
                 if reel_info:
                     reels.append(reel_info)
                 if len(reels) >= max_posts:
+                    if self.logger_manager is not None:
+                        self.logger_manager.log_account_success(username, len(reels))
                     return reels
 
             paging_info = paginated_reels_response["paging_info"]
+
+        if self.logger_manager is not None:
+            self.logger_manager.log_account_success(username, len(reels))
 
         return reels
