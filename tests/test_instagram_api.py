@@ -147,7 +147,9 @@ class TestInstagramAPI(unittest.TestCase):
         """
         with self.assertRaises(Exception) as ctx:
             self.api._get_headers_for_reels()
-        self.assertIn("CSRF Token empty", str(ctx.exception))
+        self.assertIn(
+            "CSRF Token is missing; perform a GET request first", str(ctx.exception)
+        )
 
     @patch("reelscraper.utils.instagram_api.UserAgent")  # <-- same patch target
     def test__get_headers_for_reels_success(self, mock_ua):
@@ -191,8 +193,8 @@ class TestInstagramAPI(unittest.TestCase):
         self.assertEqual(response, {"reels": []})
         mock_get_headers.assert_called_once_with(referer)
         mock_handle_request.assert_called_once_with(
-            "post",
-            self.api.CLIPS_USER_URL,
+            method="post",
+            url=self.api.CLIPS_USER_URL,
             headers={"Header": "Value"},
             data=payload,
         )

@@ -12,7 +12,7 @@ class ReelScraper:
 
     def __init__(
         self,
-        timeout: int,
+        timeout: Optional[int] = None,
         proxy: Optional[str] = None,
         logger_manager: Optional[LoggerManager] = None,
     ) -> None:
@@ -20,7 +20,7 @@ class ReelScraper:
         Initializes [ReelScraper] with an [InstagramAPI] and an [Extractor].
 
         :param [timeout]: Connection timeout in seconds
-        :param [proxy]: Proxy string or None
+        :param [proxy]: Proxy string (username:password@IP:IP_PORT) or None
         """
         self.api: InstagramAPI = InstagramAPI(timeout=timeout, proxy=proxy)
         self.extractor: Extractor = Extractor()
@@ -49,7 +49,7 @@ class ReelScraper:
             if response is not None:
                 break
 
-            if self.logger_manager is not None:
+            if self.logger_manager is not None and retry >= 1:
                 self.logger_manager.log_retry(retry, max_retries, username)
 
         if response is None:

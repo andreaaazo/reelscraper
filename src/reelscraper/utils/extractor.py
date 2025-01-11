@@ -1,24 +1,32 @@
 import re
 import xml.etree.ElementTree as ET
-from typing import Optional, Dict
+from typing import Optional, Dict, Any, Union
 
 
 class Extractor:
     """
-    VideoExtractor composes utility methods to parse Instagram video/reel information.
-    Encourages (COI), (DRY), (KISS), (YAGNI), (CCAC), (SRP), (OCP), (LSP), (ISP), (DIP).
+    Extractor provides utility methods to parse Instagram video/reel information.
+
+    Utilizes composition by calling helper functions for various parsing tasks.
     """
 
     @staticmethod
     def parse_iso8601_duration(duration: str) -> Optional[float]:
         """
-        parse_iso8601_duration converts an ISO 8601 duration string to total seconds.
+        Convert ISO 8601 duration string to total seconds.
 
-        :param [duration]: Duration in ISO 8601 format (e.g. "PT0H0M18.100S").
-        :return: Float value of duration in seconds or None if parsing fails.
+        **Parameters:**
+        - `[duration]`: ISO 8601 duration string (e.g. "PT0H0M18.100S").
+
+        **Returns:**
+        - Float representing total seconds if successful, otherwise None.
         """
-        pattern = re.compile(
-            r"^PT" r"(?:(\d+)H)?" r"(?:(\d+)M)?" r"(?:(\d+(?:\.\d+)?)S)?$"
+        pattern: re.Pattern = re.compile(
+            r"^PT"  # Duration begins with PT
+            r"(?:(\d+)H)?"  # Optional hours group
+            r"(?:(\d+)M)?"  # Optional minutes group
+            r"(?:(\d+(?:\.\d+)?)S)?"  # Optional seconds group, supports decimals
+            r"$"
         )
         match = pattern.match(duration)
         if not match:
@@ -26,62 +34,80 @@ class Extractor:
 
         try:
             hours_str, minutes_str, seconds_str = match.groups()
-            hours = int(hours_str) if hours_str else 0
-            minutes = int(minutes_str) if minutes_str else 0
-            seconds = float(seconds_str) if seconds_str else 0.0
+            hours: int = int(hours_str) if hours_str else 0
+            minutes: int = int(minutes_str) if minutes_str else 0
+            seconds: float = float(seconds_str) if seconds_str else 0.0
             return hours * 3600 + minutes * 60 + seconds
         except (ValueError, TypeError):
             return None
 
     @staticmethod
-    def get_video_duration(node: Dict) -> Optional[float]:
+    def get_video_duration(node: Dict[str, Any]) -> Optional[float]:
         """
-        get_video_duration extracts total video duration from XML dash manifest.
+        Extract total video duration from XML DASH manifest.
 
-        :param [node]: Dictionary containing dash_info with 'video_dash_manifest' key.
-        :return: Float value of duration in seconds or None if extraction fails.
+        **Parameters:**
+        - `[node]`: Dictionary with key 'dash_info' containing 'video_dash_manifest'.
+
+        **Returns:**
+        - Float representing duration in seconds if extraction is successful, otherwise None.
         """
         try:
-            xml_string = node.get("dash_info", {}).get("video_dash_manifest")
-            root = ET.fromstring(xml_string)
-            duration_str = root.attrib.get("mediaPresentationDuration")
-            return Extractor.parse_iso8601_duration(duration_str)
+            xml_string: Optional[str] = node.get("dash_info", {}).get(
+                "video_dash_manifest"
+            )
+            if not xml_string:
+                return None
+            root: ET.Element = ET.fromstring(xml_string)
+            duration_str: Optional[str] = root.attrib.get("mediaPresentationDuration")
+            return (
+                Extractor.parse_iso8601_duration(duration_str) if duration_str else None
+            )
         except (ET.ParseError, ValueError, TypeError):
             return None
 
     @staticmethod
-    def extract_video_info(node: Dict) -> Optional[Dict]:
+    def extract_video_info(
+        node: Dict[str, Any]
+    ) -> Optional[Dict[str, Union[int, float, str, Dict[str, int]]]]:
         """
-        extract_video_info obtains main video details from a media node.
+        Obtain main video details from a media node.
 
-        :param [node]: Media node with keys like 'is_video', 'video_url', 'dimensions', etc.
-        :return: Dictionary with extracted video info or None if invalid or incomplete.
+        **Parameters:**
+        - `[node]`: Dictionary representing media with keys like 'is_video', 'video_url', 'taken_at_timestamp',
+          'dimensions', and 'shortcode'.
+
+        **Returns:**
+        - Dictionary with extracted video info if valid, otherwise None.
         """
         if node.get("is_video") is not True:
             return None
 
-        video_url = node.get("video_url")
-        likes = node.get("edge_media_preview_like", {}).get("count")
-        comments = node.get("edge_media_to_comment", {}).get("count")
-        views = node.get("video_view_count")
-        posted_time = node.get("taken_at_timestamp")
-        width = node.get("dimensions", {}).get("width")
-        height = node.get("dimensions", {}).get("height")
-        shortcode = node.get("shortcode")
+        # Ensure required keys exist and are valid
+        video_url: Optional[str] = node.get("video_url")
+        posted_time_raw: Any = node.get("taken_at_timestamp")
+        shortcode: Optional[str] = node.get("shortcode")
+        dimensions_node: Dict[str, Any] = node.get("dimensions", {})
 
-        # Convert values to integers when possible
+        if not (video_url and posted_time_raw and shortcode and dimensions_node):
+            return None
+
         try:
-            likes = int(likes)
-            comments = int(comments)
-            views = int(views)
-            posted_time = int(posted_time)
-            width = int(width)
-            height = int(height)
+            posted_time: int = int(posted_time_raw)
+            # Return None if posted_time is invalid
+            if posted_time <= 0:
+                return None
+
+            likes: int = int(node.get("edge_media_preview_like", {}).get("count", 0))
+            comments: int = int(node.get("edge_media_to_comment", {}).get("count", 0))
+            views: int = int(node.get("video_view_count", 0))
+            width: int = int(dimensions_node.get("width", 0))
+            height: int = int(dimensions_node.get("height", 0))
         except (ValueError, TypeError):
             return None
 
-        duration = Extractor.get_video_duration(node)
-        if duration is None or width <= 0 or height <= 0 or not shortcode:
+        duration: Optional[float] = Extractor.get_video_duration(node)
+        if duration is None or width <= 0 or height <= 0:
             return None
 
         return {
@@ -98,17 +124,24 @@ class Extractor:
             },
         }
 
-    def extract_reel_info(self, media: Dict) -> Optional[Dict]:
+    def extract_reel_info(
+        self, media: Dict[str, Any]
+    ) -> Optional[Dict[str, Union[str, int, float, Dict[str, int]]]]:
         """
-        extract_reel_info obtains reel details from an Instagram media object.
+        Obtain reel details from an Instagram media object.
 
-        :param [media]: Dictionary with reel data (e.g. 'code', 'like_count', 'play_count', etc.).
-        :return: Dictionary with reel info or None if invalid or incomplete.
+        **Parameters:**
+        - `[media]`: Dictionary with reel data keys such as 'code', 'like_count', 'comment_count',
+          'play_count', 'taken_at', 'video_duration', 'original_width', 'original_height',
+          and 'number_of_qualities'.
+
+        **Returns:**
+        - Dictionary with extracted reel information if valid, otherwise None.
         """
         if not media:
             return None
 
-        required_keys = {
+        required_keys: Dict[str, Any] = {
             "code": str,
             "like_count": (int, float),
             "comment_count": (int, float),
@@ -120,18 +153,18 @@ class Extractor:
             "number_of_qualities": (int, float),
         }
 
-        extracted = {}
+        extracted: Dict[str, Union[int, float, str]] = {}
         for key, expected_type in required_keys.items():
-            value = media.get(key)
+            value: Any = media.get(key)
             if value is None or not isinstance(value, expected_type):
                 return None
             extracted[key] = value
 
-        owner = media.get("owner")
+        owner: Optional[Dict[str, Any]] = media.get("owner")
         if not owner or "username" not in owner:
             return None
 
-        reel_url = f"https://www.instagram.com/reel/{extracted['code']}"
+        reel_url: str = f"https://www.instagram.com/reel/{extracted['code']}"
         return {
             "url": reel_url,
             "shortcode": extracted["code"],

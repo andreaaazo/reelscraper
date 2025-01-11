@@ -57,7 +57,7 @@ class TestLoggerManager(unittest.TestCase):
         self.assertEqual(len(self.list_handler.records), 1)
         record = self.list_handler.records[0]
         self.assertEqual(record.levelno, logging.WARNING)
-        expected_message = f"RETRY {retry}/{max_retries} | Account: {account}"
+        expected_message = f"Account: {account} | Retry {retry}/{max_retries}"
         self.assertIn(expected_message, record.getMessage())
 
     def test_log_account_success(self):

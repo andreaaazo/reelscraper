@@ -309,9 +309,9 @@ class TestReelScraper(unittest.TestCase):
         result = rs.get_user_reels(self.username, max_posts=1, max_retries=3)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["reel"]["code"], "retry_success")
-        # Confirm that two retries were logged.
+        # Confirm that one retry were logged.
         retry_logs = [call for call in self.logger.calls if call[0] == "retry"]
-        self.assertEqual(len(retry_logs), 2)
+        self.assertEqual(len(retry_logs), 1)
 
     def test_get_user_reels_stops_at_max_posts_limit(self):
         """

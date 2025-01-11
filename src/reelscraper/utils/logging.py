@@ -1,87 +1,133 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
-from typing import Optional
 
 
 class LoggerManager:
+    """
+    LoggerManager configures and manages logging operations.
+
+    Uses composition for handler setup ensuring single responsibility.
+    """
+
     def __init__(
         self,
         name: str = __name__,
         level: int = logging.INFO,
-        fmt: str = "[%(levelname)s] %(asctime)s | %(name)s | %(message)s",
+        fmt: str = "[%(levelname)s] %(asctime)s | %(message)s",
         datefmt: str = "%H:%M:%S",
-        log_file: Optional[str] = None,
-        max_bytes: int = 1_000_000,
+        max_bytes: int = 500_000,
         backup_count: int = 3,
-    ):
+        save_log: bool = False,
+    ) -> None:
         """
-        Initializes and configures a logger.
+        Initializes and configures the logger with console and optional file logging.
 
-        :param name: Name of the logger (usually __name__ for module logging)
-        :param level: Logging level (e.g. logging.DEBUG, logging.INFO, etc.)
-        :param fmt: Log message format
-        :param datefmt: Date format for log messages
-        :param log_file: Path to the log file (if None, file logging is disabled)
-        :param max_bytes: Maximum file size in bytes before rotating the log file
-        :param backup_count: Number of backup files to keep when rotating the log file
+        **Parameters:**
+        - `[name]`: Name of the logger (usually __name__ for module logging).
+        - `[level]`: Logging level (e.g., logging.DEBUG, logging.INFO, etc.).
+        - `[fmt]`: Log message format.
+        - `[datefmt]`: Date format for log messages.
+        - `[max_bytes]`: Maximum file size in bytes before rotating the log file.
+        - `[backup_count]`: Number of backup files to keep when rotating the log file.
+        - `[save_log]`: If True, creates a log directory and saves the log file inside it.
         """
-        self.logger = logging.getLogger(name)
+        self.logger: logging.Logger = logging.getLogger(name)
         self.logger.setLevel(level)
 
-        # Prevent adding handlers multiple times if they already exist
+        # Configure logger handlers if not already added
         if not self.logger.handlers:
-            formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
+            formatter: logging.Formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
 
-            # Configure console handler
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(level)
-            console_handler.setFormatter(formatter)
-            self.logger.addHandler(console_handler)
+            self._add_console_handler(level=level, formatter=formatter)
 
-            # Configure file handler if log_file is specified
-            if log_file:
-                file_handler = RotatingFileHandler(
+            if save_log:
+                log_dir: str = "logs"
+                os.makedirs(log_dir, exist_ok=True)
+                log_file: str = os.path.join(log_dir, f"{name}.log")
+                self._add_file_handler(
+                    level=level,
+                    formatter=formatter,
                     filename=log_file,
-                    maxBytes=max_bytes,
-                    backupCount=backup_count,
+                    max_bytes=max_bytes,
+                    backup_count=backup_count,
                 )
-                file_handler.setLevel(level)
-                file_handler.setFormatter(formatter)
-                self.logger.addHandler(file_handler)
 
-    def log_account_error(self, account_name: str):
+    def _add_console_handler(self, level: int, formatter: logging.Formatter) -> None:
         """
-        Logs an error message for a specific account.
+        Adds a console stream handler to the logger.
 
-        :param account_name: Identifier for the account
+        **Parameters:**
+        - `[level]`: Logging level for the handler.
+        - `[formatter]`: Formatter to format log messages.
+        """
+        console_handler: logging.StreamHandler = logging.StreamHandler()
+        console_handler.setLevel(level)
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
+
+    def _add_file_handler(
+        self,
+        level: int,
+        formatter: logging.Formatter,
+        filename: str,
+        max_bytes: int,
+        backup_count: int,
+    ) -> None:
+        """
+        Adds a rotating file handler to the logger.
+
+        **Parameters:**
+        - `[level]`: Logging level for the handler.
+        - `[formatter]`: Formatter to format log messages.
+        - `[filename]`: Path to the log file.
+        - `[max_bytes]`: Maximum file size in bytes before rotating.
+        - `[backup_count]`: Number of backup files to keep.
+        """
+        file_handler: RotatingFileHandler = RotatingFileHandler(
+            filename=filename, maxBytes=max_bytes, backupCount=backup_count
+        )
+        file_handler.setLevel(level)
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+
+    def log_account_error(self, account_name: str) -> None:
+        """
+        Logs an error message indicating failure for a specific account.
+
+        **Parameters:**
+        - `[account_name]`: Identifier for the account.
         """
         self.logger.error(
             f"Account: {account_name} | Failed to fetch reels after retries"
         )
 
-    def log_retry(self, retry: int, max_retries: int, account_name: str):
+    def log_retry(self, retry: int, max_retries: int, account_name: str) -> None:
         """
-        Logs a retry warning message, indicating the retry number for a specific account.
+        Logs a warning message indicating the retry attempt for a specific account.
 
-        :param retry: The current retry number
-        :param max_retries: The maximum number of retry allowed
-        :param account_name: Identifier for the account
+        **Parameters:**
+        - `[retry]`: Current retry attempt number.
+        - `[max_retries]`: Maximum allowed retries.
+        - `[account_name]`: Identifier for the account.
         """
-        self.logger.warning(f"RETRY {retry}/{max_retries} | Account: {account_name}")
+        self.logger.warning(f"Account: {account_name} | Retry {retry}/{max_retries}")
 
-    def log_account_success(self, username: str, reel_count: int):
+    def log_account_success(self, username: str, reel_count: int) -> None:
         """
-        Logs an info message indicating the successful processing of an account.
+        Logs an informational message indicating successful processing for an account.
 
-        :param account_name: Identifier for the account
-        :param reel_count: Count of reels processed for the account
+        **Parameters:**
+        - `[username]`: Identifier for the account.
+        - `[reel_count]`: Number of reels processed.
         """
         self.logger.info(f"Account: {username} | Reels: {reel_count}")
 
-    def log_account_begin(self, username: str):
+    def log_account_begin(self, username: str) -> None:
         """
-        Logs an info message indicating the beginning of an account.
+        Logs an informational message indicating the beginning of account processing.
 
-        :param username: Identifier for the username
+        **Parameters:**
+        - `[username]`: Identifier for the account.
         """
         self.logger.info(f"Account: {username} | Begin scraping...")
