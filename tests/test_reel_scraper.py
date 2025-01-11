@@ -405,6 +405,175 @@ class TestReelScraper(unittest.TestCase):
         # Verify that after reaching max_posts the success log reflects 2 reels.
         self.assertIn(("success", self.username, 2), self.logger.calls)
 
+    def test_logger_account_begin_always_called(self):
+        """
+        Test that log_account_begin is always called at the beginning.
+        """
+        # Create a valid response (single batch, no pagination).
+        response = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "begin_test",
+                        "like_count": 10,
+                        "comment_count": 2,
+                        "play_count": 100,
+                        "taken_at": 1610000000,
+                        "video_duration": 30,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                }
+            ],
+            "paging_info": {"more_available": False},
+        }
+
+        dummy_api = DummyInstagramAPI([response])
+        dummy_extractor = DummyExtractor()
+        rs = ReelScraper(timeout=5, proxy=None, logger_manager=self.logger)
+        rs.api = dummy_api
+        rs.extractor = dummy_extractor
+
+        rs.get_user_reels(self.username, max_posts=1, max_retries=1)
+        # Check that log_account_begin was called.
+        self.assertIn(("begin", self.username), self.logger.calls)
+
+    def test_logger_account_error_when_fetch_fails(self):
+        """
+        Test that log_account_error is called if fetching reels fails
+        after the maximum number of retries.
+        """
+        # Simulate 2 failed attempts by returning None responses.
+        dummy_api = DummyInstagramAPI([None, None])
+        dummy_extractor = DummyExtractor()
+        rs = ReelScraper(timeout=5, proxy=None, logger_manager=self.logger)
+        rs.api = dummy_api
+        rs.extractor = dummy_extractor
+
+        with self.assertRaises(Exception) as context:
+            rs.get_user_reels(self.username, max_posts=1, max_retries=2)
+        self.assertIn("Error fetching reels for username", str(context.exception))
+        # Check that error was logged.
+        self.assertIn(("error", self.username), self.logger.calls)
+
+    def test_logger_success_called_mid_pagination(self):
+        """
+        Test that if max_posts is reached in the middle of a paginated batch,
+        log_account_success is called with the current reel count.
+        """
+        # First response: returns one valid reel plus indicates more available.
+        response1 = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "mid_1",
+                        "like_count": 11,
+                        "comment_count": 1,
+                        "play_count": 110,
+                        "taken_at": 1610001000,
+                        "video_duration": 20,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                }
+            ],
+            "paging_info": {"more_available": True, "max_id": "page_2"},
+        }
+        # Second response: returns two reels, but we only need one more (max_posts=2).
+        response2 = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "mid_2",
+                        "like_count": 12,
+                        "comment_count": 1,
+                        "play_count": 120,
+                        "taken_at": 1610001100,
+                        "video_duration": 22,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                },
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "mid_3",
+                        "like_count": 13,
+                        "comment_count": 2,
+                        "play_count": 130,
+                        "taken_at": 1610001200,
+                        "video_duration": 23,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                },
+            ],
+            "paging_info": {"more_available": False},
+        }
+
+        dummy_api = DummyInstagramAPI([response1, response2])
+        dummy_extractor = DummyExtractor()
+        rs = ReelScraper(timeout=5, proxy=None, logger_manager=self.logger)
+        rs.api = dummy_api
+        rs.extractor = dummy_extractor
+
+        # Set max_posts=2. Thus, once the second valid reel is appended inside the loop,
+        # the method should call log_account_success and return.
+        result = rs.get_user_reels(self.username, max_posts=2, max_retries=1)
+        self.assertEqual(len(result), 2)
+        # Check that log_account_success was called with count 2.
+        self.assertIn(("success", self.username, 2), self.logger.calls)
+
+    def test_logger_success_at_end_after_full_pagination(self):
+        """
+        Test that if pagination ends (i.e. no more reels are available)
+        and the total reels are less than max_posts, then log_account_success is called
+        with the final reel count.
+        """
+        # Single batch with less reels than max_posts.
+        response = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "end_1",
+                        "like_count": 21,
+                        "comment_count": 2,
+                        "play_count": 210,
+                        "taken_at": 1610001300,
+                        "video_duration": 25,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                }
+            ],
+            "paging_info": {"more_available": False},
+        }
+
+        dummy_api = DummyInstagramAPI([response])
+        dummy_extractor = DummyExtractor()
+        rs = ReelScraper(timeout=5, proxy=None, logger_manager=self.logger)
+        rs.api = dummy_api
+        rs.extractor = dummy_extractor
+
+        result = rs.get_user_reels(self.username, max_posts=5, max_retries=1)
+        self.assertEqual(len(result), 1)
+        # Check that success was called at the end with reel count 1.
+        self.assertIn(("success", self.username, 1), self.logger.calls)
+
 
 if __name__ == "__main__":
     unittest.main()
