@@ -112,7 +112,9 @@ class LoggerManager:
         - `[max_retries]`: Maximum allowed retries.
         - `[account_name]`: Identifier for the account.
         """
-        self.logger.warning(f"Account: {account_name} | Retry {retry}/{max_retries}")
+        self.logger.warning(
+            f"RETRY | Account: {account_name} | Retry {retry}/{max_retries}"
+        )
 
     def log_account_success(self, username: str, reel_count: int) -> None:
         """
@@ -131,7 +133,7 @@ class LoggerManager:
         **Parameters:**
         - `[username]`: Identifier for the account.
         """
-        self.logger.info(f"Account: {username} | Begin scraping...")
+        self.logger.info(f"BEGIN | Account: {username} | Begin scraping...")
 
     def log_reels_scraped(
         self,
@@ -145,7 +147,7 @@ class LoggerManager:
         - `[username]`: Identifier for the account.
         - `[reel_count]`: Current number of reels scraped.
         """
-        self.logger.debug(f"Account: {username} | Reels: {reel_count}")
+        self.logger.debug(f"SCRAPING | Account: {username} | Reels: {reel_count}")
 
     def log_finish_multiscraping(
         self,
@@ -168,6 +170,4 @@ class LoggerManager:
         """
         Logs an informational message indicating the saving of the scraping results
         """
-        self.logger.info(
-            f"Saving scraping results | Saving {reels_saved_count} Reels from {account}"
-        )
+        self.logger.info(f"SAVING | {reels_saved_count} Reels from {account}")
