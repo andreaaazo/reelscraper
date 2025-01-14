@@ -1,7 +1,7 @@
 import logging
 import unittest
 from typing import List
-from unittest.mock import patch, ANY, MagicMock
+from unittest.mock import patch, MagicMock
 from logging.handlers import RotatingFileHandler
 
 from reelscraper.utils.logger_manager import LoggerManager
@@ -85,9 +85,10 @@ class TestLoggerManager(unittest.TestCase):
         expected_message = f"Account: {account} | Begin scraping..."
         self.assertIn(expected_message, record.getMessage())
 
-    @patch("os.makedirs")
+    @patch("reelscraper.utils.logger_manager.os.makedirs")
     @patch(
-        "os.path.join", side_effect=lambda log_dir, filename: f"{log_dir}/{filename}"
+        "reelscraper.utils.logger_manager.os.path.join",
+        side_effect=lambda log_dir, filename: f"{log_dir}/{filename}",
     )
     def test_save_log_creates_file_handler(self, mock_path_join, mock_makedirs):
         """
@@ -135,9 +136,10 @@ class TestLoggerManager(unittest.TestCase):
                 backup_count=backup_count,
             )
 
-    @patch("os.makedirs")
+    @patch("reelscraper.utils.logger_manager.os.makedirs")
     @patch(
-        "os.path.join", side_effect=lambda log_dir, filename: f"{log_dir}/{filename}"
+        "reelscraper.utils.logger_manager.os.path.join",
+        side_effect=lambda log_dir, filename: f"{log_dir}/{filename}",
     )
     def test_file_handler_setup(self, mock_path_join, mock_makedirs):
         """
