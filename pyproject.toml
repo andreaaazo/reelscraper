@@ -40,7 +40,7 @@ dynamic = ["dependencies"]
 
 
 [project.scripts]
-reelscraper = "reelscraper.cli:main"
+reelscraper = "reelscraper.cli:master"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
