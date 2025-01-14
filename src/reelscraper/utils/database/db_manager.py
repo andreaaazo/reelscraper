@@ -17,7 +17,7 @@ class DBManager:
 
     def __init__(
         self,
-        db_url: Optional[str] = None,
+        db_url: str = "sqlite:///scraper.db",
         echo: bool = False,
     ) -> None:
         """
@@ -25,8 +25,6 @@ class DBManager:
                        Defaults to an in-memory SQLite for demo if not provided.
         :param echo: If True, SQLAlchemy will log all SQL statements.
         """
-        if db_url is None:
-            db_url = "sqlite:///:memory:"
 
         # Create the engine. Using StaticPool is a typical approach for in-memory or small usage.
         # For production usage with Postgres or MySQL, remove `connect_args` and `poolclass`.

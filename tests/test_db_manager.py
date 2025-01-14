@@ -35,7 +35,7 @@ class TestDBManager(unittest.TestCase):
         """
         Tests the fallback to sqlite:///:memory: when no db_url is given.
         """
-        dbm = DBManager(db_url=None, echo=False)  # coverage test line
+        dbm = DBManager(echo=False)  # coverage test line
         self.assertIsNotNone(dbm.engine)
 
     def test_init_custom_sqlite_db_url(self):

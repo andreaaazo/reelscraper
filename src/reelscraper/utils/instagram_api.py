@@ -73,7 +73,7 @@ class InstagramAPI:
 
         return {
             "http": f"http://{proxy}",
-            "https": f"https://{proxy}",
+            "https": f"http://{proxy}",
         }
 
     def _get_default_headers(self, referer: Optional[str] = None) -> Dict[str, str]:

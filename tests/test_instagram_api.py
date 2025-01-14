@@ -21,7 +21,7 @@ class TestInstagramAPI(unittest.TestCase):
         """Test that the proxy is correctly configured when provided."""
         expected_proxy = {
             "http": "http://user:pass@127.0.0.1:8080",
-            "https": "https://user:pass@127.0.0.1:8080",
+            "https": "http://user:pass@127.0.0.1:8080",
         }
         self.assertEqual(self.api.proxy, expected_proxy)
         self.assertEqual(self.api.timeout, 10)
@@ -43,7 +43,7 @@ class TestInstagramAPI(unittest.TestCase):
         result = self.api._configure_proxy(proxy_str)
         expected = {
             "http": "http://another_user:another_pass@localhost:9999",
-            "https": "https://another_user:another_pass@localhost:9999",
+            "https": "http://another_user:another_pass@localhost:9999",
         }
         self.assertEqual(result, expected)
 
