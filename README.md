@@ -177,4 +177,3 @@ This software is for **personal and educational** purposes only. Use it in accor
 ---
 
 Enjoy scraping, and may your concurrency be swift!
-```

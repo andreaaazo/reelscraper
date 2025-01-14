@@ -320,4 +320,3 @@ Remember: “With great power comes great responsibility.”
 And in this case: **With great concurrency comes cooler CPU fans.**
 
 > **Final Note:** If you ever catch yourself smiling at log messages like “Done with account: cat_with_a_hat,” imagine your code delivering a virtual high-five every time it succeeds.
-```
