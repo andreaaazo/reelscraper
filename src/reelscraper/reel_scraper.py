@@ -88,6 +88,10 @@ class ReelScraper:
             reel_info: Optional[Dict] = self.extractor.extract_reel_info(media)
             if reel_info:
                 reels.append(reel_info)
+                if self.logger_manager is not None:
+                    self.logger_manager.log_reels_scraped(
+                        username, len(reels), max_posts
+                    )
             if len(reels) >= max_posts:
                 if self.logger_manager is not None:
                     self.logger_manager.log_account_success(username, len(reels))
@@ -104,6 +108,10 @@ class ReelScraper:
                 reel_info: Optional[Dict] = self.extractor.extract_reel_info(media)
                 if reel_info:
                     reels.append(reel_info)
+                    if self.logger_manager is not None:
+                        self.logger_manager.log_reels_scraped(
+                            username, len(reels), max_posts
+                        )
                 if len(reels) >= max_posts:
                     if self.logger_manager is not None:
                         self.logger_manager.log_account_success(username, len(reels))
