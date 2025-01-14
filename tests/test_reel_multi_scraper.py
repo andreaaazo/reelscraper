@@ -387,10 +387,3 @@ class TestReelMultiScraper(unittest.TestCase):
             self.assertIn(username, self.usernames)
             self.assertEqual(mp, 99)
             self.assertEqual(mr, 77)
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-if __name__ == "__main__":
-    unittest.main()

@@ -676,7 +676,3 @@ class TestReelScraper(unittest.TestCase):
         # There should be one call per reel scraped (or at least more than one, which implies that
         # the paginated loop ran and updated paging_info more than once).
         self.assertGreaterEqual(len(reels_scraped_calls), 3)
-
-
-if __name__ == "__main__":
-    unittest.main()

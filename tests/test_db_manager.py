@@ -174,7 +174,3 @@ class TestDBManager(unittest.TestCase):
         with self.SessionLocal() as check_session:
             account = check_session.query(Account).filter_by(username="dave").first()
             self.assertIsNone(account)
-
-
-if __name__ == "__main__":
-    unittest.main()
