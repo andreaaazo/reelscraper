@@ -1,19 +1,19 @@
 import re
 import xml.etree.ElementTree as ET
-from typing import Optional, Dict, Any, Union
+from typing import Any, Dict, Optional, Pattern, Union
 
 
 class Extractor:
     """
     Extractor provides utility methods to parse Instagram video/reel information.
 
-    Utilizes composition by calling helper functions for various parsing tasks.
+    Utilizes composition by calling helper functions for specialized parsing tasks.
     """
 
     @staticmethod
     def parse_iso8601_duration(duration: str) -> Optional[float]:
         """
-        Convert ISO 8601 duration string to total seconds.
+        Converts an ISO 8601 duration string to total seconds.
 
         **Parameters:**
         - `[duration]`: ISO 8601 duration string (e.g. "PT0H0M18.100S").
@@ -21,12 +21,8 @@ class Extractor:
         **Returns:**
         - Float representing total seconds if successful, otherwise None.
         """
-        pattern: re.Pattern = re.compile(
-            r"^PT"  # Duration begins with PT
-            r"(?:(\d+)H)?"  # Optional hours group
-            r"(?:(\d+)M)?"  # Optional minutes group
-            r"(?:(\d+(?:\.\d+)?)S)?"  # Optional seconds group, supports decimals
-            r"$"
+        pattern: Pattern[str] = re.compile(
+            r"^PT" r"(?:(\d+)H)?" r"(?:(\d+)M)?" r"(?:(\d+(?:\.\d+)?)S)?" r"$"
         )
         match = pattern.match(duration)
         if not match:
@@ -44,7 +40,7 @@ class Extractor:
     @staticmethod
     def get_video_duration(node: Dict[str, Any]) -> Optional[float]:
         """
-        Extract total video duration from XML DASH manifest.
+        Extracts total video duration from an XML DASH manifest.
 
         **Parameters:**
         - `[node]`: Dictionary with key 'dash_info' containing 'video_dash_manifest'.
@@ -58,6 +54,7 @@ class Extractor:
             )
             if not xml_string:
                 return None
+
             root: ET.Element = ET.fromstring(xml_string)
             duration_str: Optional[str] = root.attrib.get("mediaPresentationDuration")
             return (
@@ -71,11 +68,11 @@ class Extractor:
         node: Dict[str, Any]
     ) -> Optional[Dict[str, Union[int, float, str, Dict[str, int]]]]:
         """
-        Obtain main video details from a media node.
+        Obtains main video details from a media node.
 
         **Parameters:**
-        - `[node]`: Dictionary representing media with keys like 'is_video', 'video_url', 'taken_at_timestamp',
-          'dimensions', and 'shortcode'.
+        - `[node]`: Dictionary representing media with keys like 'is_video', 'video_url',
+          'taken_at_timestamp', 'dimensions', and 'shortcode'.
 
         **Returns:**
         - Dictionary with extracted video info if valid, otherwise None.
@@ -83,7 +80,6 @@ class Extractor:
         if node.get("is_video") is not True:
             return None
 
-        # Ensure required keys exist and are valid
         video_url: Optional[str] = node.get("video_url")
         posted_time_raw: Any = node.get("taken_at_timestamp")
         shortcode: Optional[str] = node.get("shortcode")
@@ -94,7 +90,6 @@ class Extractor:
 
         try:
             posted_time: int = int(posted_time_raw)
-            # Return None if posted_time is invalid
             if posted_time <= 0:
                 return None
 
@@ -128,7 +123,7 @@ class Extractor:
         self, media: Dict[str, Any]
     ) -> Optional[Dict[str, Union[str, int, float, Dict[str, int]]]]:
         """
-        Obtain reel details from an Instagram media object.
+        Obtains reel details from an Instagram media object.
 
         **Parameters:**
         - `[media]`: Dictionary with reel data keys such as 'code', 'like_count', 'comment_count',

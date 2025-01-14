@@ -91,8 +91,8 @@ class TestLoggerManager(unittest.TestCase):
     )
     def test_save_log_creates_file_handler(self, mock_path_join, mock_makedirs):
         """
-        Test that when save_log is True a file handler is added by calling _add_file_handler.
-        This test patches os.makedirs, os.path.join, and the internal _add_file_handler method.
+        Test that when save_log is True a file handler is added by calling _configure_file_handler.
+        This test patches os.makedirs, os.path.join, and the internal _configure_file_handler method.
         """
         # Define parameters for creating the logger.
         level = logging.DEBUG
@@ -103,8 +103,10 @@ class TestLoggerManager(unittest.TestCase):
         fmt = "%(asctime)s - %(levelname)s - %(message)s"
         datefmt = "%Y-%m-%d %H:%M:%S"
 
-        # Patch _add_file_handler to spy on its call.
-        with patch.object(LoggerManager, "_add_file_handler") as mock_add_file_handler:
+        # Patch _configure_file_handler to spy on its call.
+        with patch.object(
+            LoggerManager, "_configure_file_handler"
+        ) as mock_configure_file_handler:
             # Initialize LoggerManager with save_log True.
             logger_name = "TestLoggerSave"
             logger_manager = LoggerManager(
@@ -124,10 +126,10 @@ class TestLoggerManager(unittest.TestCase):
             expected_log_file = f"logs/{logger_name}.log"
             mock_path_join.assert_called_with("logs", f"{logger_name}.log")
 
-            # Verify that _add_file_handler was called with the expected arguments.
-            mock_add_file_handler.assert_called_with(
-                level=level,
-                formatter=ANY,  # We allow any Formatter instance
+            # Verify that _configure_file_handler was called with the expected arguments.
+            mock_configure_file_handler.assert_called_with(
+                log_level=level,
+                formatter=logger_manager.logger.handlers[0].formatter,
                 filename=expected_log_file,
                 max_bytes=max_bytes,
                 backup_count=backup_count,
@@ -144,9 +146,9 @@ class TestLoggerManager(unittest.TestCase):
             log_dir: str = "logs"
             os.makedirs(log_dir, exist_ok=True)
             log_file: str = os.path.join(log_dir, f"{name}.log")
-            self._add_file_handler(...)
+            self._configure_file_handler(...)
 
-        We verify this by patching os.makedirs, os.path.join, and _add_file_handler.
+        We verify this by patching os.makedirs, os.path.join, and _configure_file_handler.
         """
         # Define expected parameters.
         logger_name = "TestLoggerFile"
@@ -158,8 +160,10 @@ class TestLoggerManager(unittest.TestCase):
         fmt = "%(asctime)s - %(levelname)s - %(message)s"
         datefmt = "%Y-%m-%d %H:%M:%S"
 
-        # Patch _add_file_handler to capture its call.
-        with patch.object(LoggerManager, "_add_file_handler") as mock_add_file_handler:
+        # Patch _configure_file_handler to capture its call.
+        with patch.object(
+            LoggerManager, "_configure_file_handler"
+        ) as mock_configure_file_handler:
             # Initialize the LoggerManager with save_log enabled so that the branch is taken.
             logger_manager = LoggerManager(
                 name=logger_name,
@@ -178,9 +182,9 @@ class TestLoggerManager(unittest.TestCase):
             expected_log_file = f"logs/{logger_name}.log"
             mock_path_join.assert_called_with("logs", f"{logger_name}.log")
 
-            # Finally, verify that _add_file_handler was called with the correct arguments.
-            mock_add_file_handler.assert_called_with(
-                level=level,
+            # Finally, verify that _configure_file_handler was called with the correct arguments.
+            mock_configure_file_handler.assert_called_with(
+                log_level=level,
                 # LoggerManager should internally create the Formatter using the provided fmt/datefmt.
                 formatter=unittest.mock.ANY,  # We use ANY if we don't need to assert specifics on the Formatter
                 filename=expected_log_file,
@@ -210,7 +214,7 @@ class TestLoggerManager(unittest.TestCase):
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
         # Create an instance of LoggerManager (it doesn't matter whether save_log is True or not)
-        # because we are directly testing the _add_file_handler method.
+        # because we are directly testing the _configure_file_handler method.
         lm = self.logger_manager
 
         # Prepare a dummy RotatingFileHandler instance.
@@ -218,8 +222,8 @@ class TestLoggerManager(unittest.TestCase):
         mock_rotating_handler.return_value = dummy_handler
 
         # Call the method under test.
-        lm._add_file_handler(
-            level=level,
+        lm._configure_file_handler(
+            log_level=level,
             formatter=formatter,
             filename=filename,
             max_bytes=max_bytes,

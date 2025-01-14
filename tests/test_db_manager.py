@@ -22,7 +22,7 @@ class TestDBManager(unittest.TestCase):
         Create all tables so each test starts with an empty DB.
         """
         self.db_manager = DBManager(db_url="sqlite:///:memory:", echo=False)
-        self.SessionLocal = self.db_manager.SessionLocal
+        self.SessionLocal = self.db_manager._session_local
         Base.metadata.create_all(self.db_manager.engine)
 
     def tearDown(self):
@@ -161,11 +161,11 @@ class TestDBManager(unittest.TestCase):
             raise SQLAlchemyError("Simulated DB error")
 
         # 1) Create the real session we'll be using inside store_reels
-        with self.db_manager.SessionLocal() as real_session:
+        with self.db_manager._session_local() as real_session:
             with mock.patch.object(real_session, "commit", side_effect=raise_sql_error):
                 # 2) Also patch SessionLocal so it returns this real_session object
                 with mock.patch.object(
-                    self.db_manager, "SessionLocal", return_value=real_session
+                    self.db_manager, "_session_local", return_value=real_session
                 ):
                     with self.assertRaises(SQLAlchemyError):
                         self.db_manager.store_reels("dave", reels_data)

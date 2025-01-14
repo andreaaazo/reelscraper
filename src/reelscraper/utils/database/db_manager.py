@@ -1,7 +1,7 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import StaticPool
 
@@ -10,9 +10,14 @@ from .db_base import Base, Account, Reel
 
 class DBManager:
     """
-    Provides a production-ready interface for database operations using SQLAlchemy.
-    - Creates necessary tables if they do not exist.
-    - Allows inserting and retrieving data with no duplicates (based on Reel.shortcode).
+    [DBManager] handles database operations using SQLAlchemy.
+
+    Uses composition for managing account and reel data with single responsibility.
+    Follows clean code guidelines to provide a simple interface for CRUD operations.
+
+    **Parameters:**
+    - `[db_url]`: Database connection URL (e.g. "sqlite:///scraper.db").
+    - `[echo]`: If True, logs SQL statements for debugging (default: False).
     """
 
     def __init__(
@@ -21,13 +26,12 @@ class DBManager:
         echo: bool = False,
     ) -> None:
         """
-        :param db_url: Database URL (e.g. 'sqlite:///scraper.db').
-                       Defaults to an in-memory SQLite for demo if not provided.
-        :param echo: If True, SQLAlchemy will log all SQL statements.
-        """
+        Initializes database engine, creates tables if not present, and configures session handling.
 
-        # Create the engine. Using StaticPool is a typical approach for in-memory or small usage.
-        # For production usage with Postgres or MySQL, remove `connect_args` and `poolclass`.
+        **Parameters:**
+        - `[db_url]`: Database URL string (e.g. "sqlite:///scraper.db").
+        - `[echo]`: Enables SQL statement logging if True (default: False).
+        """
         self.engine = create_engine(
             db_url,
             echo=echo,
@@ -35,12 +39,18 @@ class DBManager:
             poolclass=StaticPool if "sqlite" in db_url else None,
         )
         Base.metadata.create_all(self.engine)
+        self._session_local = sessionmaker(bind=self.engine)
 
-        self.SessionLocal = sessionmaker(bind=self.engine)
-
-    def get_or_create_account(self, session, username: str) -> Account:
+    def get_or_create_account(self, session: Session, username: str) -> Account:
         """
-        Retrieves an account by username; creates one if it doesn't exist.
+        Retrieves an [Account] by [username] or creates a new entry if it does not exist.
+
+        **Parameters:**
+        - `[session]`: Active SQLAlchemy session.
+        - `[username]`: Instagram username.
+
+        **Returns:**
+        - [Account] object corresponding to the specified username.
         """
         account = session.query(Account).filter_by(username=username).first()
         if account is None:
@@ -49,29 +59,38 @@ class DBManager:
             session.commit()
         return account
 
-    def store_reels(self, username: str, reels_data: List[Dict]) -> None:
+    def store_reels(self, username: str, reels_data: List[Dict[str, Any]]) -> None:
         """
         Stores a list of reels in the database, skipping duplicates based on `shortcode`.
-        """
-        with self.SessionLocal() as session:
-            # 1) Find or create the Account row
-            account = self.get_or_create_account(session, username)
 
-            # 2) Insert reels, avoiding duplicates
+        **Parameters:**
+        - `[username]`: Instagram username associated with the reels.
+        - `[reels_data]`: List of dictionaries containing reel information.
+
+        **Returns:**
+        - None, but persists new reels in the database. Rolls back on SQLAlchemyError.
+
+        **Raises:**
+        - `SQLAlchemyError`: If database transaction fails.
+        """
+        with self._session_local() as session:
+            # Find or create the account row
+            account: Account = self.get_or_create_account(session, username)
+
+            # Insert reels, avoiding duplicates
             for reel_data in reels_data:
-                shortcode = reel_data.get("shortcode")
+                shortcode: Optional[str] = reel_data.get("shortcode")
                 if not shortcode:
-                    # Skip any incomplete data
+                    # Skip incomplete data (no shortcode means invalid reel)
                     continue
 
-                existing_reel = (
+                existing_reel: Optional[Reel] = (
                     session.query(Reel).filter_by(shortcode=shortcode).first()
                 )
                 if existing_reel:
-                    # Already in DB, skip to avoid duplicates
+                    # Duplicate found, skip insertion
                     continue
 
-                # Create a new Reel
                 new_reel = Reel(
                     url=reel_data.get("url", ""),
                     shortcode=shortcode,

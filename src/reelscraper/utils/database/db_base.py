@@ -5,6 +5,17 @@ Base = declarative_base()
 
 
 class Account(Base):
+    """
+    [Account] model for storing account details.
+
+    Defines a many-to-one relationship with [Reel].
+
+    **Parameters / Columns:**
+    - `[id]`: Primary key integer, autoincrement.
+    - `[username]`: Unique string representing the Instagram username.
+    - `[reels]`: Relationship referencing multiple [Reel] instances.
+    """
+
     __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -15,6 +26,28 @@ class Account(Base):
 
 
 class Reel(Base):
+    """
+    [Reel] model for storing reel information.
+
+    Defines a many-to-one relationship with [Account].
+
+    **Parameters / Columns:**
+    - `[id]`: Primary key integer, autoincrement.
+    - `[url]`: String representing the reel's URL.
+    - `[shortcode]`: Unique reel shortcode, used as an index.
+    - `[username]`: String for referencing the reel's poster.
+    - `[likes]`: Number of likes on the reel.
+    - `[comments]`: Number of comments on the reel.
+    - `[views]`: Number of views on the reel.
+    - `[posted_time]`: Unix timestamp of when the reel was posted.
+    - `[video_duration]`: Duration in seconds of the reel.
+    - `[numbers_of_qualities]`: Number of available quality variants.
+    - `[width]`: Video width.
+    - `[height]`: Video height.
+    - `[account_id]`: Foreign key linking to [Account].
+    - `[account]`: Relationship back to the [Account] model.
+    """
+
     __tablename__ = "reels"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
