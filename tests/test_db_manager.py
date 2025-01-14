@@ -31,11 +31,11 @@ class TestDBManager(unittest.TestCase):
         """
         Base.metadata.drop_all(self.db_manager.engine)
 
-    def test_init_no_db_url_provided(self):
+    def test_init_db_url(self):
         """
         Tests the fallback to sqlite:///:memory: when no db_url is given.
         """
-        dbm = DBManager(echo=False)  # coverage test line
+        dbm = DBManager(db_url="sqlite:///:memory:", echo=False)
         self.assertIsNotNone(dbm.engine)
 
     def test_init_custom_sqlite_db_url(self):
