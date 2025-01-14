@@ -1,5 +1,5 @@
-[![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)
-[![Build](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)
+[![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)  
+[![Build](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)  
 [![Code Tests Coverage](https://codecov.io/gh/andreaaazo/reelscraper/branch/master/graph/badge.svg)](https://codecov.io/gh/andreaaazo/reelscraper)
 
 <h1 align="center">
@@ -8,7 +8,7 @@
 </h1>
 
 <h4 align="center">
-Scrape Instagram Reels data with ease—single or multiple accounts at once—using Python, threading, and a dash of digital sorcery. 
+Scrape Instagram Reels data with ease—be it a single account or many in parallel—using Python, threading, robust logging, and optional data-saving.
 </h4>
 
 <p align="center">
@@ -31,7 +31,7 @@ Reel Scraper requires **Python 3.9+**. Install it from PyPI:
 pip install reelscraper
 ```
 
-Or clone from GitHub:
+Alternatively, clone from GitHub:
 
 ```bash
 git clone https://github.com/andreaaazo/reelscraper.git
@@ -39,18 +39,25 @@ cd reelscraper
 python -m pip install .
 ```
 
+---
+
 ## 🚀 Usage
 
-Below are two common ways to run the scraper—interactively in Python or via a CLI entry point (if provided).
+Reel Scraper now supports additional logging and data-saving functionalities. Below are two common ways to run the scraper—either interactively or via a CLI entry point (if provided).
 
 ### 1. Single Account or Single-Session Scraping
-Use the `ReelScraper` class for scraping a single Instagram account’s Reels.
+
+Use the `ReelScraper` class for scraping Reels from one Instagram account at a time. Optionally, integrate a `LoggerManager` to get detailed logs during retries and processing.
 
 ```python
 from reelscraper import ReelScraper
+from reelscraper.utils import LoggerManager
 
-# Initialize with desired settings
-scraper = ReelScraper(timeout=30, proxy=None)
+# Optionally configure the logger
+logger = LoggerManager()
+
+# Initialize with a 30-second timeout, no proxy, and logging enabled
+scraper = ReelScraper(timeout=30, proxy=None, logger_manager=logger)
 
 # Fetch up to 10 reels for username "someaccount"
 reels_data = scraper.get_user_reels("someaccount", max_posts=10)
@@ -58,79 +65,108 @@ for reel in reels_data:
     print(reel)
 ```
 
-### 2. Multiple Accounts with Concurrency
-Use the `ReelMultiScraper` class to scrape Reels from multiple Instagram accounts in parallel.
+### 2. Multiple Accounts with Concurrency & Data Saving
+
+Use the `ReelMultiScraper` class to process multiple Instagram accounts concurrently. In addition to concurrency, you can now enable logging and automatically save the results using a `DataSaver`.
 
 ```python
-from reelscraper import ReelScraper
-from reelscraper import ReelMultiScraper
+from reelscraper import ReelScraper, ReelMultiScraper
+from reelscraper.utils import LoggerManager, DataSaver
 
-# Initialize a single scraper instance
-single_scraper = ReelScraper(timeout=30, proxy=None)
+# Configure logger and data saver
+logger = LoggerManager()
+data_saver = DataSaver(full_path="results.json")
 
-# Initialize the multi-scraper with a text file of usernames, one per line
+# Initialize a single scraper instance with logging
+single_scraper = ReelScraper(timeout=30, proxy=None, logger_manager=logger)
+
+# Initialize the multi-scraper with the data saver and custom concurrency settings
 multi_scraper = ReelMultiScraper(
-    accounts_file="accounts.txt",
     scraper=single_scraper,
-    max_workers=5  # concurrency level
+    logger_manager=logger,
+    max_workers=5,      # Number of threads
+    data_saver=data_saver
 )
 
-# This returns a dict mapping each username to its list of reels
-all_reels = multi_scraper.scrape_accounts()
-print(all_reels)
+# Provide a file with one username per line:
+# accounts.txt content example:
+#   user1
+#   user2
+#   user3
+accounts_file_path = "accounts.txt"
+
+# Start the multi-account scraping process:
+# Optionally, define max_posts_per_profile and max_retries_per_profile.
+all_reels = multi_scraper.scrape_accounts(
+    accounts_file=accounts_file_path,
+    max_posts_per_profile=20,
+    max_retires_per_profile=10
+)
+
+# Display overall (aggregated) results:
+print(f"Total reels scraped: {len(all_reels)}")
 ```
 
-**File-based approach**: Provide a file named `accounts.txt` with one username per line:
-```
-user1
-user2
-user3
-```
-The code will automatically read these usernames and scrape their Reels in parallel.
+> **Note:** The multi-account scraper reads usernames from your provided file (one per line) and aggregates reels across all accounts. Logging messages and progress are displayed during processing, and the final result is saved if `DataSaver` is configured.
 
 ---
 
 ## 🏗 Classes
 
 ### `ReelScraper`
-- Wraps around `InstagramAPI` and `Extractor` to fetch Reels data.  
-- **Methods**:
-  - `get_user_reels(username, max_posts, max_retries)`: Gathers Reels for a given username, with optional pagination and retries.
+- **Purpose:**  
+  Retrieves Instagram Reels data for a single account.
+- **Key Components:**  
+  - **InstagramAPI:** Handles HTTP requests.  
+  - **Extractor:** Formats raw data into structured reels information.  
+  - **LoggerManager (optional):** Logs retries and status events.
+- **Key Method:**  
+  - `get_user_reels(username, max_posts, max_retries)`: Fetches reels for the specified user, applying pagination, retries, and logging.
 
 ### `ReelMultiScraper`
-- Manages scraping multiple accounts in parallel using `ReelScraper` (or a subclass) under the hood.  
-- **Methods**:
-  - `scrape_accounts()`: Dispatches concurrent requests to scrape each account listed in `accounts.txt` (or your chosen file).
+- **Purpose:**  
+  Scrapes multiple accounts concurrently using an underlying `ReelScraper` instance.
+- **Key Components:**  
+  - **ThreadPoolExecutor:** Manages concurrent requests.  
+  - **AccountManager:** Loads accounts from a file.  
+  - **LoggerManager (optional):** Tracks start, successes, errors, and final statistics.  
+  - **DataSaver (optional):** Saves results to a file.
+- **Key Method:**  
+  - `scrape_accounts(accounts_file, max_posts_per_profile, max_retires_per_profile)`: Executes parallel scraping across the accounts listed in the provided file.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome all contributions to make this scraper faster, smarter, or less prone to cosmic errors. To contribute:
+We welcome contributions that make this scraper smarter, faster, or more resilient to changes. To contribute:
 
-1. **Fork** the project.  
-2. **Create** a new branch.  
-3. **Commit** your improvements.  
-4. **Submit** a pull request.  
+1. **Fork** the project.
+2. **Create** a new branch.
+3. **Commit** your improvements (bonus points for clear comments and even a dash of humor).
+4. **Submit** a pull request.
 
-Adding tests, code comments, and a bit of humor in your commit messages is always appreciated!
+Your contributions—whether bug fixes, new features, or documentation updates—are greatly appreciated!
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](https://github.com/andreaaazo/reelscraper/blob/master/LICENSE.txt). Feel free to adapt, enhance, or break it—just be kind to fellow developers (and caffeinated beverages).
+This project is licensed under the [MIT License](https://github.com/andreaaazo/reelscraper/blob/master/LICENSE.txt). Use, modify, or distribute the project freely (just be kind to your fellow developers and remember your caffeine intake).
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **Python** community for making concurrency and packaging (somewhat) sane.  
-- **Instagram** for hosting so many reels and giving us interesting content to scrape—please don’t smite us.  
-- **Coffee** (and tea!) for fueling late-night debugging sessions.
+- **Python Community:** For enabling an accessible approach to concurrency, API integration, and packaging.
+- **Instagram:** For providing reels that inspire both creativity and the need for efficient scraping.
+- **Coffee & Tea:** The timeless fuels behind countless hours of problem-solving and debugging.
 
 ---
 
 ## ⚠ Disclaimer
 
-This project is for **educational and personal use**. Use it responsibly and within Instagram’s Terms of Service. We do not endorse scraping for malicious or large-scale commercial purposes. When in doubt, show social media platforms the same respect you’d show your grandmother’s cookie jar.
+This project is for **educational and personal use only**. Always use it responsibly and in compliance with Instagram’s Terms of Service. We do not condone or endorse large-scale commercial scraping or any activity that violates policies. When in doubt, respect intellectual property and privacy the way you’d guard your grandmother’s cookie jar.
+
+---
+
+Happy scraping and may your CPU fans stay cool!
