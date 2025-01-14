@@ -8,7 +8,7 @@
 </h1>
 
 <h4 align="center">
-Scrape Instagram Reels data with ease—be it a single account or many in parallel—using Python, threading, robust logging, and optional data-saving.
+Scrape Instagram Reels data with ease—be it a single account or many in parallel—using Python, threading, robust logging, and optional database support.
 </h4>
 
 <p align="center">
@@ -44,7 +44,7 @@ python -m pip install .
 
 ## 🚀 Usage
 
-ReelScraper supports detailed logging and optional data-saving. Choose between single-session scraping or multi-account concurrency.
+ReelScraper supports detailed logging and optional persistence via a database. You can either scrape a single Instagram account or handle multiple accounts concurrently.
 
 ### 1. Single-Account Scraping
 
@@ -66,23 +66,23 @@ for reel in reels_data:
     print(reel)
 ```
 
-### 2. Multi-Account Concurrency & Data Saving
+### 2. Multi-Account Concurrency & Database Storage
 
-Use **`ReelMultiScraper`** to process many accounts concurrently. Configure logging (`LoggerManager`) and data-saving (`DataSaver`) if desired.
+Use **`ReelMultiScraper`** to process many accounts concurrently. Configure logging (`LoggerManager`) and database persistence (`DBManager`) if desired.
 
 ```python
 from reelscraper import ReelScraper, ReelMultiScraper
 from reelscraper.utils import LoggerManager
 from reelscraper.utils.database import DBManager
 
-# Configure logger and data saver
+# Configure logger and optional DB manager
 logger = LoggerManager()
-db_manager = DBManager()
+db_manager = DBManager(db_url="sqlite:///myreels.db")
 
 # Create a single scraper instance
 single_scraper = ReelScraper(timeout=30, proxy=None, logger_manager=logger)
 
-# MultiScraper for concurrency, data saving, and auto-logging
+# MultiScraper for concurrency, database integration, and auto-logging
 multi_scraper = ReelMultiScraper(
     single_scraper,
     max_workers=5,
@@ -95,16 +95,20 @@ multi_scraper = ReelMultiScraper(
 accounts_file_path = "accounts.txt"
 
 # Scrape accounts concurrently
+# If DBManager is provided, results are stored in DB, and this method returns None
 all_reels = multi_scraper.scrape_accounts(
     accounts_file=accounts_file_path,
     max_posts_per_profile=20,
     max_retires_per_profile=10
 )
 
-print(f"Total reels scraped: {len(all_reels)}")
+if all_reels is not None:
+    print(f"Total reels scraped: {len(all_reels)}")
+else:
+    print("All reels have been stored in the database.")
 ```
 
-> **Note:** MultiScraper will gather usernames from the specified file, log progress if a `LoggerManager` is used, and optionally save aggregated reels if a `DBManager` is provided.
+> **Note:** If `DBManager` is set, scraped reels are saved to the database instead of being returned.
 
 ---
 
@@ -118,7 +122,7 @@ print(f"Total reels scraped: {len(all_reels)}")
   - `Extractor`: Structures raw reel data.  
   - `LoggerManager` (optional): Logs retries and status events.
 - **Key Method:**  
-  - `get_user_reels(username, max_posts, max_retries)`: Retrieves reels, handling pagination and retries.
+  - `get_user_reels(username, max_posts=50, max_retries=10)`: Retrieves reels, handling pagination and retries.
 
 ### `ReelMultiScraper`
 - **Purpose:**  
@@ -127,9 +131,9 @@ print(f"Total reels scraped: {len(all_reels)}")
   - `ThreadPoolExecutor`: Enables concurrent scraping.  
   - `AccountManager`: Reads accounts from a local file.  
   - `LoggerManager` (optional): Captures multi-account events.  
-  - `DBManager` (optional): Saves aggregated results to disk.
+  - `DBManager` (optional): Saves aggregated results to a database.
 - **Key Method:**  
-  - `scrape_accounts(accounts_file, max_posts_per_profile, max_retires_per_profile)`: Concurrently processes all accounts found in the file.
+  - `scrape_accounts(accounts_file, max_posts_per_profile, max_retires_per_profile)`: Concurrently processes all accounts found in the file, optionally storing results in a DB.
 
 ---
 
@@ -162,7 +166,7 @@ Licensed under the [MIT License](https://github.com/andreaaazo/reelscraper/blob/
 
 - **Python Community**: For making concurrency and requests straightforward to implement.  
 - **Instagram**: For providing reel content that inspires creativity.  
-- **Beverages**: For fueling long coding sessions (coffee or tea).
+- **Beverages**: For fueling late-night debugging and coding sessions.
 
 ---
 
@@ -172,5 +176,5 @@ This software is for **personal and educational** purposes only. Use it in accor
 
 ---
 
-Enjoy scraping, and may your concurrency be swift! 
+Enjoy scraping, and may your concurrency be swift!
 ```

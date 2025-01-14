@@ -11,7 +11,7 @@ Documentation covers two primary classes: **[`ReelScraper`](#reelscraper)** and 
 
 1. [ReelScraper](#reelscraper)  
    1.1. [Overview](#overview)  
-   1.2. [Constructor](#constructors)  
+   1.2. [Constructor](#constructor)  
    1.3. [Methods](#methods)  
        - [`get_user_reels()`](#get_user_reels)  
    1.4. [Attributes](#attributes)  
@@ -73,7 +73,7 @@ def __init__(
 ```python
 def get_user_reels(
     self, username: str, max_posts: int = 50, max_retries: int = 10
-) -> List[Dict]:
+) -> List[Dict[str, Any]]:
     """
     Fetches reels for a specific user up to max_posts. Utilizes internal retry logic
     and pagination via the private method _fetch_reels().
@@ -135,8 +135,8 @@ for reel in reels:
 **Sample Output:**
 ```
 Fetched 20 reels!
-{'id': '1234567890', 'caption': 'Dancing cat reel!', 'like_count': 42, ...}
-{'id': '1234567891', 'caption': 'Cat in a new hat', 'like_count': 56, ...}
+{'shortcode': 'ABC123', 'url': 'https://someurl.com/reel/ABC123', 'likes': 42, ...}
+{'shortcode': 'ABC124', 'url': 'https://someurl.com/reel/ABC124', 'likes': 56, ...}
 ...
 ```
 
@@ -149,7 +149,7 @@ Fetched 20 reels!
 **`ReelMultiScraper`** extends single-user scraping to support concurrent processing across multiple Instagram accounts. It uses Python’s `ThreadPoolExecutor` for parallel requests, integrating with:
 
 - **`ReelScraper`** for data retrieval.
-- **`DataSaver`** (optional) for persistence of gathered reel data.
+- **`DBManager`** (optional) for storing reels in a database.
 - **`AccountManager`** to load account names from a provided file.
 
 Think of it as a multi-lane highway where each thread processes a different Instagram account simultaneously.
@@ -163,16 +163,14 @@ def __init__(
     self,
     scraper: ReelScraper,
     max_workers: int = 5,
-    data_saver: Optional[DataSaver] = None,
+    db_manager: Optional[DBManager] = None,
 ) -> None:
     """
-    Initializes ReelMultiScraper with necessary components for concurrent scraping.
+    Initializes ReelMultiScraper with required references.
 
-    :param scraper: An instance of ReelScraper for fetching reel data.
-    :param logger_manager: Optional LoggerManager for logging multi-scraping events.
-    :param max_workers: Maximum number of threads for parallel requests (default: 5).
-        - Note: Too many threads may overwhelm your CPU.
-    :param data_saver: Optional DataSaver instance to save the final results.
+    :param scraper: Instance of ReelScraper used to fetch reels.
+    :param max_workers: Maximum number of threads for concurrent requests (default: 5).
+    :param db_manager: Optional DBManager instance for storing reels data.
     """
 ```
 
@@ -188,16 +186,17 @@ def scrape_accounts(
     accounts_file: str,
     max_posts_per_profile: Optional[int] = None,
     max_retires_per_profile: Optional[int] = None,
-) -> List[Dict]:
+) -> Optional[List[Dict[str, Any]]]:
     """
-    Concurrently scrapes reels from all Instagram accounts specified in a file.
-    Each account is processed in a separate thread.
+    Scrapes reels for each username found in [accounts_file] in parallel.
 
-    :param accounts_file: Path to a text file with one Instagram username per line.
-    :param max_posts_per_profile: Maximum number of reels to fetch per profile.
-    :param max_retires_per_profile: Maximum number of retries per profile.
-    :return: A concatenated list of all reels from all accounts.
-             (Aggregates reels across accounts.)
+    If [db_manager] is provided, results are stored in the database;
+    otherwise, a list of reel info dictionaries is returned.
+
+    :param accounts_file: Path to a file containing one username per line.
+    :param max_posts_per_profile: Maximum number of reels to fetch for each account (optional).
+    :param max_retires_per_profile: Maximum number of retries when fetching reels (optional).
+    :return: List of reel information dictionaries if [db_manager] is None, otherwise None.
     """
 ```
 
@@ -209,11 +208,11 @@ def scrape_accounts(
 2. **Threaded Scraping**  
    A `ThreadPoolExecutor` with `max_workers` threads submits `get_user_reels()` tasks for each account.
 
-3. **Data Persistence**  
-   If a `DataSaver` is provided, results are saved after processing.
+3. **Database Storage**  
+   If a `DBManager` is provided, each account’s reels are saved in the database. Otherwise, results are accumulated into a single list.
 
 4. **Completion Logging**  
-   After all accounts are processed, a final log entry records the total reels scraped and the number of accounts processed.
+   After all accounts are processed, a final log entry records the total reels scraped and the total number of accounts processed.
 
 ---
 
@@ -225,8 +224,8 @@ def scrape_accounts(
 - **`max_workers`** (`int`):  
   Number of threads for parallel account scraping.
 
-- **`data_saver`** (`DataSaver`, optional):  
-  Saves the complete aggregated dataset once scraping is done.
+- **`db_manager`** (`DBManager`, optional):  
+  Saves reels data to a database if provided.
 
 ---
 
@@ -235,11 +234,11 @@ def scrape_accounts(
 ```python
 from reelscraper.reel_scraper import ReelScraper
 from reelscraper.multi_scraper import ReelMultiScraper
-from reelscraper.utils import LoggerManager, DataSaver
+from reelscraper.utils import LoggerManager, DBManager
 
-# Optionally configure logging and data saving
+# Optionally configure logging and DB usage
 logger = LoggerManager()
-data_saver = DataSaver(full_path="results.json")
+db_manager = DBManager(db_url="sqlite:///myreels.db")
 
 # Create a ReelScraper instance
 my_scraper = ReelScraper(timeout=10, proxy=None, logger_manager=logger)
@@ -248,29 +247,34 @@ my_scraper = ReelScraper(timeout=10, proxy=None, logger_manager=logger)
 multi_scraper = ReelMultiScraper(
     scraper=my_scraper,
     max_workers=5,
-    data_saver=data_saver
+    db_manager=db_manager
 )
 
 # Specify the path to the accounts file (one username per line)
-accounts_file_path = "my_accounts.txt"
+accounts_file_path = "accounts.txt"
 
 # Start the multi-account scraping process
 results = multi_scraper.scrape_accounts(
     accounts_file=accounts_file_path,
     max_posts_per_profile=20,      # up to 20 reels per account
-    max_retires_per_profile=10     # 10 retries per account (if needed)
+    max_retires_per_profile=10     # 10 retries per account if needed
 )
 
-# Display overall results (aggregated reels from all accounts)
-print(f"Total reels scraped: {len(results)}")
+if results is not None:
+    print(f"Total reels scraped (no DBManager used): {len(results)}")
+else:
+    print("All reels have been stored in the database.")
 ```
 
 **Sample Output:**
 ```
-Done with account: cat_with_a_hat
-Done with account: travel_dude
-Error with account: definitely_not_real
-Total reels scraped: 38
+BEGIN | Account: cat_with_a_hat | Begin scraping...
+RETRY | Account: cat_with_a_hat | Retry 1/10
+SUCCESS | 20 Reels of cat_with_a_hat
+BEGIN | Account: travel_dude | Begin scraping...
+...
+SUCCESS | Scraped 38 Reels from 2 Accounts
+All reels have been stored in the database.
 ```
 
 ---
@@ -280,8 +284,8 @@ Total reels scraped: 38
 1. **How do I provide logging functionality?**  
    Create an instance of `LoggerManager` and pass it to `ReelScraper` or `ReelMultiScraper`. Logs will include retries, successes, errors, and other key events.
 
-2. **Can I save results automatically?**  
-   Supply a `DataSaver` instance to `ReelMultiScraper`. Results are saved after processing completes.
+2. **Can I save results automatically in a database?**  
+   Yes. Supply a `DBManager` instance to `ReelMultiScraper`. Results are saved in the database after processing completes. If no `DBManager` is provided, a list of reels is returned.
 
 3. **What if some accounts are private or do not have reels?**  
    An empty list is returned or an error is logged for those accounts. The multi-scraper continues with other accounts.
@@ -290,7 +294,7 @@ Total reels scraped: 38
    Yes, set the `max_workers` parameter in `ReelMultiScraper`. Adjust according to your system’s capability and Instagram’s rate limits.
 
 5. **Are scraped data stored permanently?**  
-   Not by default. Data is returned as a list of dictionaries. Use `DataSaver` or your own persistence method for long-term storage.
+   By default, if `DBManager` is not used, data is returned as a list of dictionaries. To store data long term, pass a `DBManager` or your own persistence mechanism.
 
 ---
 
@@ -316,3 +320,4 @@ Remember: “With great power comes great responsibility.”
 And in this case: **With great concurrency comes cooler CPU fans.**
 
 > **Final Note:** If you ever catch yourself smiling at log messages like “Done with account: cat_with_a_hat,” imagine your code delivering a virtual high-five every time it succeeds.
+```
