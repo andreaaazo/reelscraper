@@ -69,6 +69,9 @@ class DummyLoggerManager:
     def log_account_begin(self, username: str):
         self.calls.append(("begin", username))
 
+    def log_reels_scraped(self, value1, value2, value3):
+        self.calls.append(("reels_scraped", value1, value2, value3))
+
 
 # The unit tests for ReelScraper
 class TestReelScraper(unittest.TestCase):
@@ -573,6 +576,106 @@ class TestReelScraper(unittest.TestCase):
         self.assertEqual(len(result), 1)
         # Check that success was called at the end with reel count 1.
         self.assertIn(("success", self.username, 1), self.logger.calls)
+
+    def test_multiple_paging_info_updates(self):
+        """
+        Test that the paging_info variable is correctly updated across multiple paginated responses.
+        This test simulates three pages of results:
+        - First page: returns one valid reel and indicates more pages.
+        - Second page: returns one valid reel and again indicates more pages.
+        - Third page: returns one valid reel and indicates no further pages.
+        We ensure that the paginated reels are concatenated correctly and that the line:
+                paging_info = paginated_reels_response["paging_info"]
+        is executed at least once.
+        """
+        # First page response: 1 valid reel; more pages available.
+        response1 = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "page1",
+                        "like_count": 10,
+                        "comment_count": 1,
+                        "play_count": 100,
+                        "taken_at": 1610000000,
+                        "video_duration": 15,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                }
+            ],
+            "paging_info": {"more_available": True, "max_id": "page2"},
+        }
+
+        # Second page response: 1 valid reel; still more pages available.
+        response2 = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "page2",
+                        "like_count": 20,
+                        "comment_count": 2,
+                        "play_count": 200,
+                        "taken_at": 1610000100,
+                        "video_duration": 20,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                }
+            ],
+            "paging_info": {"more_available": True, "max_id": "page3"},
+        }
+
+        # Third page response: 1 valid reel; no more pages available.
+        response3 = {
+            "items": [
+                {
+                    "media": {
+                        "valid": True,
+                        "code": "page3",
+                        "like_count": 30,
+                        "comment_count": 3,
+                        "play_count": 300,
+                        "taken_at": 1610000200,
+                        "video_duration": 25,
+                        "original_width": 640,
+                        "original_height": 480,
+                        "number_of_qualities": 2,
+                        "owner": {"username": self.username},
+                    }
+                }
+            ],
+            "paging_info": {"more_available": False},
+        }
+
+        dummy_api = DummyInstagramAPI([response1, response2, response3])
+        dummy_extractor = DummyExtractor()
+        rs = ReelScraper(timeout=10, proxy=None, logger_manager=self.logger)
+        rs.api = dummy_api
+        rs.extractor = dummy_extractor
+
+        # Request more reels than available so that all pages get processed.
+        result = rs.get_user_reels(self.username, max_posts=5, max_retries=2)
+
+        # Verify that all three reels (from three pages) are returned in the expected order.
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0]["reel"]["code"], "page1")
+        self.assertEqual(result[1]["reel"]["code"], "page2")
+        self.assertEqual(result[2]["reel"]["code"], "page3")
+
+        # Optionally, verify that the logs contain the reels_scraped calls from all pages.
+        reels_scraped_calls = [
+            call for call in self.logger.calls if call[0] == "reels_scraped"
+        ]
+        # There should be one call per reel scraped (or at least more than one, which implies that
+        # the paginated loop ran and updated paging_info more than once).
+        self.assertGreaterEqual(len(reels_scraped_calls), 3)
 
 
 if __name__ == "__main__":

@@ -69,7 +69,7 @@ class TestLoggerManager(unittest.TestCase):
         self.assertEqual(len(self.list_handler.records), 1)
         record = self.list_handler.records[0]
         self.assertEqual(record.levelno, logging.INFO)
-        expected_message = f"Account: {account} | Reels: {reel_count}"
+        expected_message = f"SUCCESS | {reel_count} Reels of {account}"
         self.assertIn(expected_message, record.getMessage())
 
     def test_log_account_begin(self):

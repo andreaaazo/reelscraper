@@ -1,6 +1,7 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+from typing import List
 
 
 class LoggerManager:
@@ -121,7 +122,7 @@ class LoggerManager:
         - `[username]`: Identifier for the account.
         - `[reel_count]`: Number of reels processed.
         """
-        self.logger.info(f"Account: {username} | Reels: {reel_count}")
+        self.logger.info(f"SUCCESS | {reel_count} Reels of {username}")
 
     def log_account_begin(self, username: str) -> None:
         """
@@ -131,3 +132,39 @@ class LoggerManager:
         - `[username]`: Identifier for the account.
         """
         self.logger.info(f"Account: {username} | Begin scraping...")
+
+    def log_reels_scraped(
+        self, username: str, reel_count: int, reel_objective: int
+    ) -> None:
+        """
+        Logs an informational message indicating the number of reels scraped
+
+        **Parameters:**
+        - `[username]`: Identifier for the account.
+        - `[reel_count]`: Current number of reels scraped.
+        - `[reel_objective]`: Number of reels to scrape.
+        """
+        self.logger.info(f"Account: {username} | Reels: {reel_count}/{reel_objective}")
+
+    def log_finish_multiscraping(
+        self,
+        reel_count: int,
+        accounts_count: int,
+    ) -> None:
+        """
+        Logs an informational message indicating the end of the multiscraping
+
+        **Parameters:**
+        - `[username]`: Identifier for the account.
+        - `[reel_count]`: Number of reels scraped.
+        - `[accounts_count]`: Number of accounts scraped.
+        """
+        self.logger.info(
+            f"SUCCESS | Scraped {reel_count} Reels from {accounts_count} Accounts"
+        )
+
+    def log_saving_scraping_results(self, file_path: str) -> None:
+        """
+        Logs an informational message indicating the saving of the scraping results
+        """
+        self.logger.info(f"Saving scraping results | File Path: {file_path}")

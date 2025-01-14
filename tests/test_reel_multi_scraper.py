@@ -6,9 +6,17 @@ from typing import Dict, List
 # Import della classe sotto test.
 from reelscraper import ReelMultiScraper
 
+
 # -----------------------------------------------------------------------------
 # Dummy implementations per il testing:
 # -----------------------------------------------------------------------------
+class DummyDataSaver:
+    def __init__(self, full_path):
+        self.full_path = full_path
+        self.saved_results = None
+
+    def save(self, results):
+        self.saved_results = results
 
 
 class DummyReelScraper:
@@ -19,7 +27,10 @@ class DummyReelScraper:
     """
 
     def __init__(
-        self, results: Dict[str, List[Dict]], errors: Dict[str, Exception] = None
+        self,
+        results: Dict[str, List[Dict]],
+        errors: Dict[str, Exception] = None,
+        logger_manager=None,
     ):
         """
         :param results: Dizionario che mappa lo username a una lista di dizionari (reels).
@@ -27,6 +38,7 @@ class DummyReelScraper:
         """
         self.results = results
         self.errors = errors if errors is not None else {}
+        self.logger_manager = logger_manager
 
     def get_user_reels(
         self, username: str, max_posts: int = None, max_retries: int = 10
@@ -78,6 +90,21 @@ class DummyLoggerManager:
         """
         self.calls.append(("begin", username))
 
+    def log_saving_scraping_results(self, full_path: str):
+        """
+        Registra il salvataggio dei risultati di scraping.
+        """
+        self.calls.append(("save", full_path))
+
+    def log_finish_multiscraping(self, total_reels: int, total_accounts: int):
+        """
+        Registra il completamento dello scraping in parallelo.
+        """
+        self.calls.append(("finish", total_reels, total_accounts))
+
+    def log_reels_scraped(self, message_or_value):
+        self.calls.append(("reels_scraped", message_or_value))
+
 
 # -----------------------------------------------------------------------------
 # Test Suite per ReelMultiScraper
@@ -113,22 +140,23 @@ class TestReelMultiScraper(unittest.TestCase):
         }
         dummy_scraper = DummyReelScraper(results=dummy_results)
         multi_scraper = ReelMultiScraper(
-            accounts_file=self.temp_accounts_file.name,
             scraper=dummy_scraper,
             logger_manager=self.dummy_logger,
             max_workers=3,
         )
 
-        # Esegue lo scraping.
-        results = multi_scraper.scrape_accounts(max_posts_per_profile=10)
-
-        # Controlla che, per ogni risultato, il numero di reels corrisponda a quanto atteso.
-        # Poiché non abbiamo la mapping username → risultato, verifichiamo solo i conteggi.
-        reel_counts = sorted([len(r) for r in results])
-        expected_counts = sorted(
-            [len(dummy_results[username]) for username in self.accounts]
+        # Esegue lo scraping (restituirà un'unica lista di reels).
+        results = multi_scraper.scrape_accounts(
+            max_posts_per_profile=10,
+            accounts_file=self.temp_accounts_file.name,
         )
-        self.assertEqual(reel_counts, expected_counts)
+
+        # Ci aspettiamo un totale di 3 reels: 1 (user1) + 2 (user2) + 0 (user3).
+        self.assertEqual(len(results), 3, "Dovrebbero esserci 3 reels totali.")
+
+        # Verifichiamo anche i 'code' dei reel ottenuti.
+        codes = sorted(r["reel"]["code"] for r in results)
+        self.assertEqual(codes, ["a1", "b1", "b2"])
 
     def test_scrape_accounts_with_errors(self):
         """
@@ -143,13 +171,15 @@ class TestReelMultiScraper(unittest.TestCase):
         dummy_errors = {"user2": Exception("Scraping failed for user2")}
         dummy_scraper = DummyReelScraper(results=dummy_results, errors=dummy_errors)
         multi_scraper = ReelMultiScraper(
-            accounts_file=self.temp_accounts_file.name,
             scraper=dummy_scraper,
             logger_manager=self.dummy_logger,
             max_workers=3,
         )
 
-        results = multi_scraper.scrape_accounts(max_posts_per_profile=10)
+        results = multi_scraper.scrape_accounts(
+            max_posts_per_profile=10,
+            accounts_file=self.temp_accounts_file.name,
+        )
 
         # Dal momento che user2 genera un errore, ci aspettiamo che i risultati contengano solo quelli di user1 e user3.
         # Non conosciamo l'ordine nella lista, per cui verifichiamo i conteggi.
@@ -169,19 +199,64 @@ class TestReelMultiScraper(unittest.TestCase):
         """
         dummy_scraper = DummyReelScraper(results={acc: [] for acc in self.accounts})
         multi_scraper = ReelMultiScraper(
-            accounts_file=self.temp_accounts_file.name,
             scraper=dummy_scraper,
             logger_manager=self.dummy_logger,
             max_workers=2,
         )
 
-        results = multi_scraper.scrape_accounts(max_posts_per_profile=10)
+        results = multi_scraper.scrape_accounts(
+            max_posts_per_profile=10,
+            accounts_file=self.temp_accounts_file.name,
+        )
 
-        # Controlla che il numero di risultati ottenuti corrisponda al numero di account.
-        self.assertEqual(len(results), len(self.accounts))
-        # Verifica che ogni risultato sia una lista vuota.
-        for reels in results:
-            self.assertEqual(reels, [])
+        # Tutti gli account restituiscono 0 reels, dunque la lista finale è vuota.
+        self.assertEqual(
+            len(results), 0, "Dovrebbe essere una lista vuota, nessun reel disponibile."
+        )
+
+    def test_scrape_accounts_with_data_saver(self):
+        """
+        Verifica che, se viene passato un data_saver, vengano salvati i risultati e che
+        venga registrato il log del salvataggio.
+        """
+        # Prepara alcuni risultati dummy per ogni account.
+        dummy_results = {
+            "user1": [{"reel": {"code": "a1"}}],
+            "user2": [{"reel": {"code": "b1"}}, {"reel": {"code": "b2"}}],
+            "user3": [{"reel": {"code": "c1"}}],
+        }
+        dummy_scraper = DummyReelScraper(results=dummy_results)
+        # Crea un dummy data saver con un percorso fittizio.
+        dummy_data_saver = DummyDataSaver(full_path="/fake/path/results.json")
+
+        # Crea l'istanza del multi-scraper passando sia il logger che il data saver.
+        # Assumiamo che ReelMultiScraper accetti un parametro 'data_saver'.
+        multi_scraper = ReelMultiScraper(
+            scraper=dummy_scraper,
+            logger_manager=self.dummy_logger,
+            data_saver=dummy_data_saver,
+            max_workers=3,
+        )
+
+        # Eseguire lo scraping.
+        results = multi_scraper.scrape_accounts(
+            max_posts_per_profile=10,
+            accounts_file=self.temp_accounts_file.name,
+        )
+
+        # Verifica che il data saver abbia salvato i risultati ottenuti.
+        self.assertEqual(
+            dummy_data_saver.saved_results,
+            results,
+            "I risultati dello scraping dovrebbero essere salvati tramite data_saver.save.",
+        )
+
+        # Verifica che il logger abbia registrato il salvataggio usando il percorso completo del data saver.
+        self.assertIn(
+            ("save", dummy_data_saver.full_path),
+            self.dummy_logger.calls,
+            "Il logger dovrebbe registrare l'azione di salvataggio con il percorso completo.",
+        )
 
 
 if __name__ == "__main__":
