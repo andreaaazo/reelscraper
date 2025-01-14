@@ -69,8 +69,8 @@ class DummyLoggerManager:
     def log_account_begin(self, username: str):
         self.calls.append(("begin", username))
 
-    def log_reels_scraped(self, value1, value2, value3):
-        self.calls.append(("reels_scraped", value1, value2, value3))
+    def log_reels_scraped(self, value1, value2):
+        self.calls.append(("reels_scraped", value1, value2))
 
 
 # The unit tests for ReelScraper

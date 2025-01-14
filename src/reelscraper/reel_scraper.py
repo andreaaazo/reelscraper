@@ -88,14 +88,13 @@ class ReelScraper:
             reel_info: Optional[Dict] = self.extractor.extract_reel_info(media)
             if reel_info:
                 reels.append(reel_info)
-                if self.logger_manager is not None:
-                    self.logger_manager.log_reels_scraped(
-                        username, len(reels), max_posts
-                    )
             if len(reels) >= max_posts:
                 if self.logger_manager is not None:
                     self.logger_manager.log_account_success(username, len(reels))
                 return reels
+
+        if self.logger_manager is not None:
+            self.logger_manager.log_reels_scraped(username, len(reels))
 
         # Check pagination availability
         while paging_info.get("more_available", False):
@@ -108,14 +107,13 @@ class ReelScraper:
                 reel_info: Optional[Dict] = self.extractor.extract_reel_info(media)
                 if reel_info:
                     reels.append(reel_info)
-                    if self.logger_manager is not None:
-                        self.logger_manager.log_reels_scraped(
-                            username, len(reels), max_posts
-                        )
                 if len(reels) >= max_posts:
                     if self.logger_manager is not None:
                         self.logger_manager.log_account_success(username, len(reels))
                     return reels
+
+            if self.logger_manager is not None:
+                self.logger_manager.log_reels_scraped(username, len(reels))
 
             paging_info = paginated_reels_response["paging_info"]
 

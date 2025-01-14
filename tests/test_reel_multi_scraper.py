@@ -43,10 +43,10 @@ class DummyReelScraper:
     def get_user_reels(
         self, username: str, max_posts: int = None, max_retries: int = 10
     ) -> List[Dict]:
-        # Se per lo username è prevista un'eccezione, la lancia.
         if username in self.errors:
+            if self.logger_manager is not None:
+                self.logger_manager.log_account_error(username)
             raise self.errors[username]
-        # Se non è specificato niente viene ritornata la lista (vuota se non presente).
         return self.results.get(username, [])
 
 
@@ -138,10 +138,11 @@ class TestReelMultiScraper(unittest.TestCase):
             "user2": [{"reel": {"code": "b1"}}, {"reel": {"code": "b2"}}],
             "user3": [],  # Nessun reel per user3.
         }
-        dummy_scraper = DummyReelScraper(results=dummy_results)
+        dummy_scraper = DummyReelScraper(
+            results=dummy_results,
+        )
         multi_scraper = ReelMultiScraper(
             scraper=dummy_scraper,
-            logger_manager=self.dummy_logger,
             max_workers=3,
         )
 
@@ -169,10 +170,11 @@ class TestReelMultiScraper(unittest.TestCase):
             "user3": [{"reel": {"code": "c1"}}],
         }
         dummy_errors = {"user2": Exception("Scraping failed for user2")}
-        dummy_scraper = DummyReelScraper(results=dummy_results, errors=dummy_errors)
+        dummy_scraper = DummyReelScraper(
+            results=dummy_results, errors=dummy_errors, logger_manager=self.dummy_logger
+        )
         multi_scraper = ReelMultiScraper(
             scraper=dummy_scraper,
-            logger_manager=self.dummy_logger,
             max_workers=3,
         )
 
@@ -197,10 +199,11 @@ class TestReelMultiScraper(unittest.TestCase):
         Verifica che lo scraping in parallelo venga eseguito per ogni account presente nel file.
         In questo test lo scraper dummy ritorna una lista vuota per ogni account.
         """
-        dummy_scraper = DummyReelScraper(results={acc: [] for acc in self.accounts})
+        dummy_scraper = DummyReelScraper(
+            results={acc: [] for acc in self.accounts},
+        )
         multi_scraper = ReelMultiScraper(
             scraper=dummy_scraper,
-            logger_manager=self.dummy_logger,
             max_workers=2,
         )
 
@@ -225,7 +228,10 @@ class TestReelMultiScraper(unittest.TestCase):
             "user2": [{"reel": {"code": "b1"}}, {"reel": {"code": "b2"}}],
             "user3": [{"reel": {"code": "c1"}}],
         }
-        dummy_scraper = DummyReelScraper(results=dummy_results)
+
+        dummy_scraper = DummyReelScraper(
+            results=dummy_results, logger_manager=self.dummy_logger
+        )
         # Crea un dummy data saver con un percorso fittizio.
         dummy_data_saver = DummyDataSaver(full_path="/fake/path/results.json")
 
@@ -233,7 +239,6 @@ class TestReelMultiScraper(unittest.TestCase):
         # Assumiamo che ReelMultiScraper accetti un parametro 'data_saver'.
         multi_scraper = ReelMultiScraper(
             scraper=dummy_scraper,
-            logger_manager=self.dummy_logger,
             data_saver=dummy_data_saver,
             max_workers=3,
         )
