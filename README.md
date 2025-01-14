@@ -1,5 +1,5 @@
-[![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)  
-[![Build](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)  
+[![PyPI version](https://img.shields.io/pypi/v/reelscraper.svg)](https://pypi.org/project/reelscraper/)
+[![Build](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/andreaaazo/reelscraper/actions/workflows/tests.yml)
 [![Code Tests Coverage](https://codecov.io/gh/andreaaazo/reelscraper/branch/master/graph/badge.svg)](https://codecov.io/gh/andreaaazo/reelscraper)
 
 <h1 align="center">
@@ -75,7 +75,7 @@ from reelscraper.utils import LoggerManager, DataSaver
 
 # Configure logger and data saver
 logger = LoggerManager()
-data_saver = DataSaver(full_path="results.json")
+data_saver = DataSaver("json")
 
 # Initialize a single scraper instance with logging
 single_scraper = ReelScraper(timeout=30, proxy=None, logger_manager=logger)
@@ -107,7 +107,7 @@ all_reels = multi_scraper.scrape_accounts(
 print(f"Total reels scraped: {len(all_reels)}")
 ```
 
-> **Note:** The multi-account scraper reads usernames from your provided file (one per line) and aggregates reels across all accounts. Logging messages and progress are displayed during processing, and the final result is saved if `DataSaver` is configured.
+> **Note:** The multi-account scraper reads usernames from your provided file (one per line) and aggregates reels across all accounts. Logging messages and progress are displayed during processing if `LoggerManager` is configured. The final result is saved if `DataSaver` is configured.
 
 ---
 
