@@ -36,7 +36,7 @@ class LoggerManager:
         self.logger.setLevel(level)
 
         # Only configure if no handlers are present
-        if not self.logger.hasHandlers():
+        if not self.logger.handlers:
             formatter: logging.Formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
             self._configure_console_handler(log_level=level, formatter=formatter)
 
