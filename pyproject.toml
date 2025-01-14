@@ -36,7 +36,7 @@ dynamic = ["dependencies"]
 [project.urls]
 "Home" = "https://github.com/andreaaazo/reelscraper"
 "Bug Tracker" = "https://github.com/andreaaazo/reelscraper/issues"
-"Documentation" = "https://github.com/andreaaazo/reelscraper/blob/master/README.md"
+"Documentation" = "https://github.com/andreaaazo/reelscraper/blob/master/DOCS.md"
 
 
 [project.scripts]

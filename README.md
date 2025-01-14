@@ -15,6 +15,7 @@ Scrape Instagram Reels data with ease—be it a single account or many in parall
   <a href="#-installation">Installation</a> •
   <a href="#-usage">Usage</a> •
   <a href="#-classes">Classes</a> •
+  <a href="#-documentation">Documentation</a> •
   <a href="#-contributing">Contributing</a> •
   <a href="#-license">License</a> •
   <a href="#-acknowledgments">Acknowledgments</a> •
@@ -133,6 +134,11 @@ print(f"Total reels scraped: {len(all_reels)}")
   - **DataSaver (optional):** Saves results to a file.
 - **Key Method:**  
   - `scrape_accounts(accounts_file, max_posts_per_profile, max_retires_per_profile)`: Executes parallel scraping across the accounts listed in the provided file.
+
+---
+
+## 📄 Documentation
+Documentation can be found at [DOCS.md](https://github.com/andreaaazo/reelscraper/blob/master/DOCS.md)
 
 ---
 
