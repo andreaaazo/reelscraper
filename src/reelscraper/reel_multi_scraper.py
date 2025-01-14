@@ -1,9 +1,7 @@
 import concurrent.futures
 from typing import List, Dict, Optional
-from reelscraper.utils.logging import LoggerManager
-from reelscraper.utils.account_manager import AccountManager
-from reelscraper.reel_scraper import ReelScraper
-from reelscraper.utils.data_saver import DataSaver
+from reelscraper.utils import LoggerManager, AccountManager, DataSaver
+from reelscraper import ReelScraper
 
 
 class ReelMultiScraper:

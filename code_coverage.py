@@ -38,7 +38,8 @@ def main():
     run_command("python -m pip install -e .", "Installing package in editable mode")
 
     run_command(
-        "coverage run -m unittest discover -s tests", "Running tests with coverage"
+        "coverage run --source=src -m unittest discover -s tests",
+        "Running tests with coverage",
     )
 
     # Generate the HTML coverage report
