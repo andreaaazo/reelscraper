@@ -145,7 +145,7 @@ class LoggerManager:
         - `[username]`: Identifier for the account.
         - `[reel_count]`: Current number of reels scraped.
         """
-        self.logger.info(f"Account: {username} | Reels: {reel_count}")
+        self.logger.debug(f"Account: {username} | Reels: {reel_count}")
 
     def log_finish_multiscraping(
         self,
