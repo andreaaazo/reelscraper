@@ -3,7 +3,7 @@
 > _"Scraping Instagram reels is like collecting Pokémon… except you don’t need to walk around the neighborhood—just let your code do the hustle!”_  
 > — Some Developer With Too Much Coffee
 
-This documentation covers two primary classes: **[`ReelScraper`](#reelscraper)** and **[`ReelMultiScraper`](#reelmultiscraper)**. Together, they offer a robust, threaded solution to fetch Instagram Reels data for one or more users while logging progress and optionally saving results. Below is a detailed overview of their APIs, methods, attributes, and usage examples.
+Documentation covers two primary classes: **[`ReelScraper`](#reelscraper)** and **[`ReelMultiScraper`](#reelmultiscraper)**. Together, they offer a robust, threaded solution to fetch Instagram Reels data for one or more users while logging progress and optionally saving results. Below is a detailed overview of their APIs, methods, attributes, and usage examples.
 
 ---
 
@@ -11,7 +11,7 @@ This documentation covers two primary classes: **[`ReelScraper`](#reelscraper)**
 
 1. [ReelScraper](#reelscraper)  
    1.1. [Overview](#overview)  
-   1.2. [Constructor](#constructors)  
+   1.2. [Constructor](#constructor)  
    1.3. [Methods](#methods)  
        - [`get_user_reels()`](#get_user_reels)  
    1.4. [Attributes](#attributes)  
@@ -34,7 +34,7 @@ This documentation covers two primary classes: **[`ReelScraper`](#reelscraper)**
 
 ### Overview
 
-The **`ReelScraper`** class focuses on retrieving Instagram Reels for a single user. It achieves this by composing three core components:
+**`ReelScraper`** focuses on retrieving Instagram Reels for a single user. It achieves this by composing three core components:
 
 - **`InstagramAPI`**: Handles direct interactions with Instagram endpoints.
 - **`Extractor`**: Processes raw API responses into structured reel details.
@@ -73,7 +73,7 @@ def __init__(
 ```python
 def get_user_reels(
     self, username: str, max_posts: int = 50, max_retries: int = 10
-) -> List[Dict]:
+) -> List[Dict[str, Any]]:
     """
     Fetches reels for a specific user up to max_posts. Utilizes internal retry logic
     and pagination via the private method _fetch_reels().
@@ -88,12 +88,14 @@ def get_user_reels(
 
 **Additional Details:**
 
-- **Retry Logic & Logging**:  
-  If a request fails, the `_fetch_reels()` method retries up to `max_retries` times, logging each retry (if a `LoggerManager` is provided).  
-- **Pagination**:  
-  After retrieving the first batch, the method will continue fetching subsequent pages (while `paging_info.get("more_available", False)` is true) until `max_posts` reels are collected.
-- **Extraction**:  
-  Each reel’s media information is processed by the `Extractor` to produce a standardized reel info dictionary.
+- **Retry Logic & Logging**  
+  If a request fails, `_fetch_reels()` retries up to `max_retries` times, logging each retry (if a `LoggerManager` is provided).
+
+- **Pagination**  
+  After retrieving the first batch, this method continues fetching subsequent pages (while `paging_info.get("more_available", False)` is true) until `max_posts` reels are collected.
+
+- **Extraction**  
+  Each reel’s media information is processed by `Extractor` to produce a standardized reel info dictionary.
 
 ---
 
@@ -133,8 +135,8 @@ for reel in reels:
 **Sample Output:**
 ```
 Fetched 20 reels!
-{'id': '1234567890', 'caption': 'Dancing cat reel!', 'like_count': 42, ...}
-{'id': '1234567891', 'caption': 'Cat in a new hat', 'like_count': 56, ...}
+{'shortcode': 'ABC123', 'url': 'https://someurl.com/reel/ABC123', 'likes': 42, ...}
+{'shortcode': 'ABC124', 'url': 'https://someurl.com/reel/ABC124', 'likes': 56, ...}
 ...
 ```
 
@@ -144,13 +146,13 @@ Fetched 20 reels!
 
 ### Overview
 
-The **`ReelMultiScraper`** extends the single-user scraper to support concurrent processing across multiple Instagram accounts. It uses Python’s `ThreadPoolExecutor` for parallel requests, and it seamlessly integrates with:
+**`ReelMultiScraper`** extends single-user scraping to support concurrent processing across multiple Instagram accounts. It uses Python’s `ThreadPoolExecutor` for parallel requests, integrating with:
 
-- A pre-configured **`ReelScraper`** for data retrieval.
-- **`DataSaver`** for optional persistence of the gathered reel data.
-- **`AccountManager`** to load account names from a provided file during the scraping process.
+- **`ReelScraper`** for data retrieval.
+- **`DBManager`** (optional) for storing reels in a database.
+- **`AccountManager`** to load account names from a provided file.
 
-Think of it as your multi-lane highway for scraping, where each thread is a lane processing a different Instagram account simultaneously.
+Think of it as a multi-lane highway where each thread processes a different Instagram account simultaneously.
 
 ---
 
@@ -161,16 +163,14 @@ def __init__(
     self,
     scraper: ReelScraper,
     max_workers: int = 5,
-    data_saver: Optional[DataSaver] = None,
+    db_manager: Optional[DBManager] = None,
 ) -> None:
     """
-    Initializes ReelMultiScraper with necessary components for concurrent scraping.
+    Initializes ReelMultiScraper with required references.
 
-    :param scraper: An instance of ReelScraper for fetching reel data.
-    :param logger_manager: Optional LoggerManager for logging multi-scraping events.
-    :param max_workers: Maximum number of threads for parallel requests (default: 5).
-        - Note: Too many threads may overwhelm your CPU.
-    :param data_saver: Optional DataSaver instance to save the final results.
+    :param scraper: Instance of ReelScraper used to fetch reels.
+    :param max_workers: Maximum number of threads for concurrent requests (default: 5).
+    :param db_manager: Optional DBManager instance for storing reels data.
     """
 ```
 
@@ -186,47 +186,46 @@ def scrape_accounts(
     accounts_file: str,
     max_posts_per_profile: Optional[int] = None,
     max_retires_per_profile: Optional[int] = None,
-) -> List[Dict]:
+) -> Optional[List[Dict[str, Any]]]:
     """
-    Concurrently scrapes reels from all Instagram accounts specified in a file.
-    Each account is processed in a separate thread.
+    Scrapes reels for each username found in [accounts_file] in parallel.
 
-    :param accounts_file: Path to a text file with one Instagram username per line.
-    :param max_posts_per_profile: Maximum number of reels to fetch per profile.
-    :param max_retires_per_profile: Maximum number of retries per profile.
-    :return: A concatenated list of all reels from all accounts.
-             (Note: Unlike the earlier design where results were mapped per username,
-             this implementation aggregates reels across accounts.)
+    If [db_manager] is provided, results are stored in the database;
+    otherwise, a list of reel info dictionaries is returned.
+
+    :param accounts_file: Path to a file containing one username per line.
+    :param max_posts_per_profile: Maximum number of reels to fetch for each account (optional).
+    :param max_retires_per_profile: Maximum number of retries when fetching reels (optional).
+    :return: List of reel information dictionaries if [db_manager] is None, otherwise None.
     """
 ```
 
 **Operational Details:**
 
-1. **Loading Accounts**:  
+1. **Loading Accounts**  
    Uses `AccountManager` to read and store usernames from the specified file.
 
-2. **Threaded Scraping**:  
-   With a `ThreadPoolExecutor` (with `max_workers` threads), it submits the `get_user_reels()` task for each account.
-   - If the main `ReelScraper` lacks its own `LoggerManager`, the optional multi-scraper `logger_manager` logs events such as the start and success or error for each account.
+2. **Threaded Scraping**  
+   A `ThreadPoolExecutor` with `max_workers` threads submits `get_user_reels()` tasks for each account.
 
-3. **Data Persistence**:  
-   If a `DataSaver` is provided, the aggregated results are saved after processing. Logging is performed before saving to announce the destination path.
+3. **Database Storage**  
+   If a `DBManager` is provided, each account’s reels are saved in the database. Otherwise, results are accumulated into a single list.
 
-4. **Completion Logging**:  
-   After all accounts are processed, a final log entry records the total number of reels scraped and the number of accounts processed.
+4. **Completion Logging**  
+   After all accounts are processed, a final log entry records the total reels scraped and the total number of accounts processed.
 
 ---
 
 ### Attributes
 
 - **`scraper`** (`ReelScraper`):  
-  The core scraping instance used to fetch reels for each account.
+  Core scraping instance used to fetch reels for each account.
 
 - **`max_workers`** (`int`):  
-  Dictates the size of the thread pool for parallel account scraping.
+  Number of threads for parallel account scraping.
 
-- **`data_saver`** (`DataSaver`, optional):  
-  Saves the full aggregated dataset once scraping is complete.
+- **`db_manager`** (`DBManager`, optional):  
+  Saves reels data to a database if provided.
 
 ---
 
@@ -235,11 +234,11 @@ def scrape_accounts(
 ```python
 from reelscraper.reel_scraper import ReelScraper
 from reelscraper.multi_scraper import ReelMultiScraper
-from reelscraper.utils import LoggerManager, DataSaver
+from reelscraper.utils import LoggerManager, DBManager
 
-# Optionally configure logging and data saving
+# Optionally configure logging and DB usage
 logger = LoggerManager()
-data_saver = DataSaver(full_path="results.json")
+db_manager = DBManager(db_url="sqlite:///myreels.db")
 
 # Create a ReelScraper instance
 my_scraper = ReelScraper(timeout=10, proxy=None, logger_manager=logger)
@@ -248,29 +247,34 @@ my_scraper = ReelScraper(timeout=10, proxy=None, logger_manager=logger)
 multi_scraper = ReelMultiScraper(
     scraper=my_scraper,
     max_workers=5,
-    data_saver=data_saver
+    db_manager=db_manager
 )
 
 # Specify the path to the accounts file (one username per line)
-accounts_file_path = "my_accounts.txt"
+accounts_file_path = "accounts.txt"
 
 # Start the multi-account scraping process
 results = multi_scraper.scrape_accounts(
     accounts_file=accounts_file_path,
-    max_posts_per_profile=20,      # e.g., up to 20 reels per account
-    max_retires_per_profile=10     # e.g., 10 retries per account (if needed)
+    max_posts_per_profile=20,      # up to 20 reels per account
+    max_retires_per_profile=10     # 10 retries per account if needed
 )
 
-# Display overall results (aggregated reels from all accounts)
-print(f"Total reels scraped: {len(results)}")
+if results is not None:
+    print(f"Total reels scraped (no DBManager used): {len(results)}")
+else:
+    print("All reels have been stored in the database.")
 ```
 
 **Sample Output:**
 ```
-Done with account: cat_with_a_hat
-Done with account: travel_dude
-Error with account: definitely_not_real
-Total reels scraped: 38
+BEGIN | Account: cat_with_a_hat | Begin scraping...
+RETRY | Account: cat_with_a_hat | Retry 1/10
+SUCCESS | 20 Reels of cat_with_a_hat
+BEGIN | Account: travel_dude | Begin scraping...
+...
+SUCCESS | Scraped 38 Reels from 2 Accounts
+All reels have been stored in the database.
 ```
 
 ---
@@ -278,35 +282,35 @@ Total reels scraped: 38
 ## FAQs
 
 1. **How do I provide logging functionality?**  
-   - Create an instance of `LoggerManager` and pass it to the constructors of both `ReelScraper` and/or `ReelMultiScraper`. This will log retries, successes, errors, and other key events.
+   Create an instance of `LoggerManager` and pass it to `ReelScraper` or `ReelMultiScraper`. Logs will include retries, successes, errors, and other key events.
 
-2. **Can I save the results automatically?**  
-   - Yes. Supply a `DataSaver` instance to `ReelMultiScraper`, and after processing, the results will be saved to the configured path.
+2. **Can I save results automatically in a database?**  
+   Yes. Supply a `DBManager` instance to `ReelMultiScraper`. Results are saved in the database after processing completes. If no `DBManager` is provided, a list of reels is returned.
 
 3. **What if some accounts are private or do not have reels?**  
-   - The scraper returns an empty list or logs an error for such accounts. The multi-scraper continues processing other accounts without terminating the entire run.
+   An empty list is returned or an error is logged for those accounts. The multi-scraper continues with other accounts.
 
-4. **Can I adjust the number of concurrent threads?**  
-   - Yes. The `max_workers` parameter in `ReelMultiScraper` controls the concurrency. Adjust based on your system’s capabilities and Instagram’s rate limits.
+4. **Can I adjust concurrency?**  
+   Yes, set the `max_workers` parameter in `ReelMultiScraper`. Adjust according to your system’s capability and Instagram’s rate limits.
 
-5. **Is the scraped data stored permanently?**  
-   - Not by default. It’s returned as a list of dictionaries. Use `DataSaver` or your own persistence method to store the data long term.
+5. **Are scraped data stored permanently?**  
+   By default, if `DBManager` is not used, data is returned as a list of dictionaries. To store data long term, pass a `DBManager` or your own persistence mechanism.
 
 ---
 
 ## Additional Tips
 
-- **Handling Large-Scale Scraping:**  
-  If planning to scrape thousands of reels, consider streaming data to disk or a database to avoid excessive memory usage.
+- **Handling Large-Scale Scraping**  
+  For thousands of reels, consider streaming data to disk or using a database to avoid high memory usage.
 
-- **Rate-Limiting and Delays:**  
-  Instagram may throttle or block aggressive scraping. Consider integrating delays or exponential backoff strategies if you encounter issues.
+- **Rate-Limiting and Delays**  
+  Instagram may throttle or block aggressive scraping. Integrate delays or exponential backoff if you encounter throttling issues.
 
-- **Enhanced Logging:**  
-  For production environments, replace or extend `LoggerManager` with a comprehensive logging framework to capture and monitor events more effectively.
+- **Enhanced Logging**  
+  In production, replace or extend `LoggerManager` with a comprehensive logging framework to capture and monitor events effectively.
 
-- **Thread Management:**  
-  Adjust `max_workers` to balance scraping speed and system load. Too many threads can lead to performance bottlenecks.
+- **Thread Management**  
+  Adjust `max_workers` to balance scraping speed and system resources.
 
 ---
 
@@ -315,6 +319,4 @@ Total reels scraped: 38
 Remember: “With great power comes great responsibility.”  
 And in this case: **With great concurrency comes cooler CPU fans.**
 
-> **Final Note:** If you ever catch yourself smiling at log messages like “Done with account: cat_with_a_hat,” just imagine your code delivering a virtual high-five every time it succeeds.
-
----
+> **Final Note:** If you ever catch yourself smiling at log messages like “Done with account: cat_with_a_hat,” imagine your code delivering a virtual high-five every time it succeeds.

@@ -1,13 +1,14 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from reelscraper.utils import InstagramAPI, Extractor, LoggerManager
 
 
 class ReelScraper:
     """
-    [ReelScraper] provides methods to gather Instagram Reels data via composition of [InstagramAPI] and [Extractor].
+    [ReelScraper] provides methods to gather Instagram Reels data using composition of [InstagramAPI] and [Extractor].
 
     :param [timeout]: Connection timeout in seconds
     :param [proxy]: Proxy string or None
+    :param [logger_manager]: Optional [LoggerManager] for logging
     """
 
     def __init__(
@@ -20,7 +21,8 @@ class ReelScraper:
         Initializes [ReelScraper] with an [InstagramAPI] and an [Extractor].
 
         :param [timeout]: Connection timeout in seconds
-        :param [proxy]: Proxy string (username:password@IP:IP_PORT) or None
+        :param [proxy]: Proxy string or None (e.g., username:password@host:port)
+        :param [logger_manager]: Optional instance of [LoggerManager]
         """
         self.api: InstagramAPI = InstagramAPI(timeout=timeout, proxy=proxy)
         self.extractor: Extractor = Extractor()
@@ -28,18 +30,17 @@ class ReelScraper:
 
     def _fetch_reels(
         self, username: str, max_id: Optional[str], max_retries: int
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """
-        Retrieves the first or paginated batch of reels. Returns a dictionary with items and paging info.
-        Retries up to [max_retries] times if fetching fails.
+        Retrieves first or subsequent batches of reels. Uses retry logic up to [max_retries].
 
-        :param [username]: Username for which reels should be fetched
-        :param [max_id]: Page identifier for subsequent requests (None for the first batch)
-        :param [max_retries]: Maximum number of retry attempts
+        :param [username]: Instagram username
+        :param [max_id]: Pagination identifier for further requests (None if fetching first batch)
+        :param [max_retries]: Maximum number of allowed retries
         :return: Dictionary containing reels items and paging info
         :raises Exception: If data cannot be fetched within [max_retries] attempts
         """
-        response = None
+        response: Optional[Dict[str, Any]] = None
         for retry in range(max_retries):
             if max_id is None:
                 response = self.api.get_user_first_reels(username)
@@ -61,31 +62,33 @@ class ReelScraper:
 
     def get_user_reels(
         self, username: str, max_posts: int = 50, max_retries: int = 10
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """
-        Gathers user reels up to [max_posts] using retry logic. Paginates through all available reels.
+        Collects user reels up to [max_posts], paginating through all available reels.
 
-        :param [username]: Username whose reels are requested
+        :param [username]: Instagram username
         :param [max_posts]: Maximum number of reels to fetch (default: 50)
         :param [max_retries]: Maximum number of retry attempts for each batch
-        :return: List of reel information dictionaries
+        :return: List of dictionaries with reel information
         :raises Exception: If initial reels cannot be fetched for [username]
         """
         if self.logger_manager is not None:
             self.logger_manager.log_account_begin(username)
 
-        reels: List[Dict] = []
+        reels: List[Dict[str, Any]] = []
 
-        # Fetch first batch of reels
-        first_reels_response = self._fetch_reels(
-            username, max_id=None, max_retries=max_retries
+        # Fetch the first batch of reels
+        first_reels_response: Dict[str, Any] = self._fetch_reels(
+            username=username, max_id=None, max_retries=max_retries
         )
-        first_reels: List[Dict] = first_reels_response["items"]
-        paging_info: Dict = first_reels_response["paging_info"]
+        first_reels: List[Dict[str, Any]] = first_reels_response["items"]
+        paging_info: Dict[str, Any] = first_reels_response["paging_info"]
 
         for reel in first_reels:
-            media: Dict = reel.get("media", {})
-            reel_info: Optional[Dict] = self.extractor.extract_reel_info(media)
+            media: Dict[str, Any] = reel.get("media", {})
+            reel_info: Optional[Dict[str, Any]] = self.extractor.extract_reel_info(
+                media
+            )
             if reel_info:
                 reels.append(reel_info)
             if len(reels) >= max_posts:
@@ -96,15 +99,19 @@ class ReelScraper:
         if self.logger_manager is not None:
             self.logger_manager.log_reels_scraped(username, len(reels))
 
-        # Check pagination availability
+        # Paginate while more reels are available
         while paging_info.get("more_available", False):
             max_id: str = paging_info.get("max_id", "")
-            paginated_reels_response = self._fetch_reels(username, max_id, max_retries)
-            paginated_reels: List[Dict] = paginated_reels_response["items"]
+            paginated_reels_response: Dict[str, Any] = self._fetch_reels(
+                username=username, max_id=max_id, max_retries=max_retries
+            )
+            paginated_reels: List[Dict[str, Any]] = paginated_reels_response["items"]
 
             for reel in paginated_reels:
-                media: Dict = reel.get("media", {})
-                reel_info: Optional[Dict] = self.extractor.extract_reel_info(media)
+                media: Dict[str, Any] = reel.get("media", {})
+                reel_info: Optional[Dict[str, Any]] = self.extractor.extract_reel_info(
+                    media
+                )
                 if reel_info:
                     reels.append(reel_info)
                 if len(reels) >= max_posts:

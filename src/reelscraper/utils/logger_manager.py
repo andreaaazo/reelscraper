@@ -1,14 +1,13 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from typing import List
 
 
 class LoggerManager:
     """
     LoggerManager configures and manages logging operations.
 
-    Uses composition for handler setup ensuring single responsibility.
+    Uses composition for handler setup, ensuring single responsibility.
     """
 
     def __init__(
@@ -22,11 +21,11 @@ class LoggerManager:
         save_log: bool = False,
     ) -> None:
         """
-        Initializes and configures the logger with console and optional file logging.
+        Initializes and configures a logger with console and optional file logging.
 
         **Parameters:**
         - `[name]`: Name of the logger (usually __name__ for module logging).
-        - `[level]`: Logging level (e.g., logging.DEBUG, logging.INFO, etc.).
+        - `[level]`: Logging level (e.g. logging.DEBUG, logging.INFO, etc.).
         - `[fmt]`: Log message format.
         - `[datefmt]`: Date format for log messages.
         - `[max_bytes]`: Maximum file size in bytes before rotating the log file.
@@ -36,40 +35,41 @@ class LoggerManager:
         self.logger: logging.Logger = logging.getLogger(name)
         self.logger.setLevel(level)
 
-        # Configure logger handlers if not already added
+        # Only configure if no handlers are present
         if not self.logger.handlers:
             formatter: logging.Formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
-
-            self._add_console_handler(level=level, formatter=formatter)
+            self._configure_console_handler(log_level=level, formatter=formatter)
 
             if save_log:
                 log_dir: str = "logs"
                 os.makedirs(log_dir, exist_ok=True)
                 log_file: str = os.path.join(log_dir, f"{name}.log")
-                self._add_file_handler(
-                    level=level,
+                self._configure_file_handler(
+                    log_level=level,
                     formatter=formatter,
                     filename=log_file,
                     max_bytes=max_bytes,
                     backup_count=backup_count,
                 )
 
-    def _add_console_handler(self, level: int, formatter: logging.Formatter) -> None:
+    def _configure_console_handler(
+        self, log_level: int, formatter: logging.Formatter
+    ) -> None:
         """
         Adds a console stream handler to the logger.
 
         **Parameters:**
-        - `[level]`: Logging level for the handler.
+        - `[log_level]`: Logging level for the console handler.
         - `[formatter]`: Formatter to format log messages.
         """
         console_handler: logging.StreamHandler = logging.StreamHandler()
-        console_handler.setLevel(level)
+        console_handler.setLevel(log_level)
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
 
-    def _add_file_handler(
+    def _configure_file_handler(
         self,
-        level: int,
+        log_level: int,
         formatter: logging.Formatter,
         filename: str,
         max_bytes: int,
@@ -79,7 +79,7 @@ class LoggerManager:
         Adds a rotating file handler to the logger.
 
         **Parameters:**
-        - `[level]`: Logging level for the handler.
+        - `[log_level]`: Logging level for the file handler.
         - `[formatter]`: Formatter to format log messages.
         - `[filename]`: Path to the log file.
         - `[max_bytes]`: Maximum file size in bytes before rotating.
@@ -88,7 +88,7 @@ class LoggerManager:
         file_handler: RotatingFileHandler = RotatingFileHandler(
             filename=filename, maxBytes=max_bytes, backupCount=backup_count
         )
-        file_handler.setLevel(level)
+        file_handler.setLevel(log_level)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
@@ -112,7 +112,9 @@ class LoggerManager:
         - `[max_retries]`: Maximum allowed retries.
         - `[account_name]`: Identifier for the account.
         """
-        self.logger.warning(f"Account: {account_name} | Retry {retry}/{max_retries}")
+        self.logger.warning(
+            f"RETRY | Account: {account_name} | Retry {retry}/{max_retries}"
+        )
 
     def log_account_success(self, username: str, reel_count: int) -> None:
         """
@@ -131,7 +133,7 @@ class LoggerManager:
         **Parameters:**
         - `[username]`: Identifier for the account.
         """
-        self.logger.info(f"Account: {username} | Begin scraping...")
+        self.logger.info(f"BEGIN | Account: {username} | Begin scraping...")
 
     def log_reels_scraped(
         self,
@@ -139,13 +141,13 @@ class LoggerManager:
         reel_count: int,
     ) -> None:
         """
-        Logs an informational message indicating the number of reels scraped
+        Logs an informational message indicating the number of reels scraped.
 
         **Parameters:**
         - `[username]`: Identifier for the account.
         - `[reel_count]`: Current number of reels scraped.
         """
-        self.logger.debug(f"Account: {username} | Reels: {reel_count}")
+        self.logger.debug(f"SCRAPING | Account: {username} | Reels: {reel_count}")
 
     def log_finish_multiscraping(
         self,
@@ -153,10 +155,9 @@ class LoggerManager:
         accounts_count: int,
     ) -> None:
         """
-        Logs an informational message indicating the end of the multiscraping
+        Logs an informational message indicating the end of multiscraping.
 
         **Parameters:**
-        - `[username]`: Identifier for the account.
         - `[reel_count]`: Number of reels scraped.
         - `[accounts_count]`: Number of accounts scraped.
         """
@@ -164,8 +165,12 @@ class LoggerManager:
             f"SUCCESS | Scraped {reel_count} Reels from {accounts_count} Accounts"
         )
 
-    def log_saving_scraping_results(self, file_path: str) -> None:
+    def log_saving_scraping_results(self, reels_saved_count: int, account: str) -> None:
         """
-        Logs an informational message indicating the saving of the scraping results
+        Logs an informational message indicating the saving of the scraping results.
+
+        **Parameters:**
+        - `[reels_saved_count]`: Number of reels successfully saved.
+        - `[account]`: Identifier for the account.
         """
-        self.logger.info(f"Saving scraping results | File Path: {file_path}")
+        self.logger.info(f"SAVING | {reels_saved_count} Reels from {account}")

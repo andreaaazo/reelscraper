@@ -13,7 +13,7 @@ class TestAccountManager(unittest.TestCase):
             accounts = manager.get_accounts()
             expected_accounts = ["user1", "user2", "user3"]
             self.assertCountEqual(accounts, expected_accounts)
-            mocked_file.assert_called_once_with("dummy_path.txt", "r")
+            mocked_file.assert_called_once_with("dummy_path.txt", "r", encoding="utf-8")
 
     def test_get_accounts_empty_file(self):
         mock_file_content = ""
@@ -21,14 +21,16 @@ class TestAccountManager(unittest.TestCase):
             manager = AccountManager("empty.txt")
             with self.assertRaises(Exception) as context:
                 manager.get_accounts()
-            self.assertEqual(str(context.exception), "Usernames not valid")
+            self.assertEqual(
+                str(context.exception), "No valid usernames found in the file."
+            )
 
     def test_get_accounts_file_not_found(self):
         with patch("builtins.open", side_effect=FileNotFoundError):
             manager = AccountManager("non_existent.txt")
             with self.assertRaises(Exception) as context:
                 manager.get_accounts()
-            self.assertEqual(str(context.exception), "File not found")
+            self.assertEqual(str(context.exception), "File not found: non_existent.txt")
 
     def test_get_accounts_with_whitespace(self):
         mock_file_content = " user1 \n\tuser2\nuser3\nuser1\n"
@@ -39,7 +41,7 @@ class TestAccountManager(unittest.TestCase):
             accounts = manager.get_accounts()
             expected_accounts = ["user1", "user2", "user3"]
             self.assertCountEqual(accounts, expected_accounts)
-            mocked_file.assert_called_once_with("whitespace.txt", "r")
+            mocked_file.assert_called_once_with("whitespace.txt", "r", encoding="utf-8")
 
     def test_get_accounts_large_file(self):
         mock_file_content = "\n".join(
@@ -52,7 +54,7 @@ class TestAccountManager(unittest.TestCase):
             accounts = manager.get_accounts()
             expected_accounts = [f"user{i}" for i in range(1000)]
             self.assertCountEqual(accounts, expected_accounts)
-            mocked_file.assert_called_once_with("large.txt", "r")
+            mocked_file.assert_called_once_with("large.txt", "r", encoding="utf-8")
 
     def test_get_accounts_only_empty_lines(self):
         mock_file_content = "\n   \n\t\n"
@@ -60,4 +62,6 @@ class TestAccountManager(unittest.TestCase):
             manager = AccountManager("only_empty_lines.txt")
             with self.assertRaises(Exception) as context:
                 manager.get_accounts()
-            self.assertEqual(str(context.exception), "Usernames not valid")
+            self.assertEqual(
+                str(context.exception), "No valid usernames found in the file."
+            )

@@ -28,11 +28,11 @@ class InstagramAPI:
         self, timeout: Optional[int] = 40, proxy: Optional[str] = None
     ) -> None:
         """
-        __init__ initializes parameters and configures proxy if provided.
+        Initializes parameters and configures proxy if provided.
 
         **Parameters:**
         - `[timeout]`: HTTP request timeout in seconds.
-        - `[proxy]`: Proxy server address in string format.
+        - `[proxy]`: Proxy server address in string format (optional).
         """
         self.timeout: Optional[int] = timeout
         self.proxy: Optional[Dict[str, str]] = (
@@ -43,9 +43,9 @@ class InstagramAPI:
 
     def _configure_proxy(self, proxy: str) -> Dict[str, str]:
         """
-        _configure_proxy constructs a dictionary for HTTP and HTTPS proxies.
+        Builds a dictionary for HTTP and HTTPS proxies.
 
-        Validates proxy format against the patterns:
+        Validates proxy format against these patterns:
           - host:port
           - user:pass@host:port
 
@@ -56,10 +56,11 @@ class InstagramAPI:
         - Dictionary with proxy configurations for both HTTP and HTTPS.
 
         **Raises:**
-        - `ValueError`: If proxy string does not match the expected format or port is invalid.
+        - `ValueError`: If proxy string doesn't match the expected format or port is invalid.
         """
         pattern: str = (
-            r"^(?:(?P<username>[\w\.\-_]+):(?P<password>[\w\.\-_]+)@)?(?P<host>[\w\.\-]+):(?P<port>\d+)$"
+            r"^(?:(?P<username>[\w\.\-_]+):(?P<password>[\w\.\-_]+)@)?"
+            r"(?P<host>[\w\.\-]+):(?P<port>\d+)$"
         )
         match = re.match(pattern, proxy)
         if not match:
@@ -73,12 +74,12 @@ class InstagramAPI:
 
         return {
             "http": f"http://{proxy}",
-            "https": f"https://{proxy}",
+            "https": f"http://{proxy}",
         }
 
     def _get_default_headers(self, referer: Optional[str] = None) -> Dict[str, str]:
         """
-        _get_default_headers constructs default HTTP headers.
+        Produces a dictionary of default HTTP headers.
 
         **Parameters:**
         - `[referer]`: Optional referer URL string.
@@ -99,15 +100,15 @@ class InstagramAPI:
 
     def _handle_request(
         self, method: str, url: str, headers: Dict[str, str], **kwargs: Any
-    ) -> Optional[Dict]:
+    ) -> Optional[Dict[str, Any]]:
         """
-        _handle_request wraps requests.request for safe HTTP interactions.
+        Wraps requests.request for safe HTTP interactions and returns parsed JSON.
 
         **Parameters:**
-        - `[method]`: HTTP method (e.g., "get", "post").
+        - `[method]`: HTTP method (e.g. "get", "post").
         - `[url]`: Target endpoint URL.
         - `[headers]`: Dictionary of HTTP headers.
-        - `[**kwargs]`: Additional keyword arguments for requests.
+        - `[**kwargs]`: Additional keyword arguments for requests.request.
 
         **Returns:**
         - Parsed JSON response as a dictionary, or None on error.
@@ -121,18 +122,19 @@ class InstagramAPI:
                 proxies=self.proxy,
                 **kwargs,
             )
+            # Update CSRF token if found in cookies
             if "csrftoken" in response.cookies:
                 self.csrf_token = response.cookies["csrftoken"]
             return response.json()
         except (requests.RequestException, json.JSONDecodeError, ValueError):
             return None
 
-    def _get_user_id(self, base_data: Dict) -> Optional[str]:
+    def _get_user_id(self, base_data: Dict[str, Any]) -> Optional[str]:
         """
-        _get_user_id extracts the user ID from provided base data.
+        Extracts user ID from provided base data.
 
         **Parameters:**
-        - `[base_data]`: Dictionary containing user data.
+        - `[base_data]`: Dictionary containing user data (should contain "data" -> "user" -> "id").
 
         **Returns:**
         - User ID string if found, otherwise None.
@@ -143,18 +145,18 @@ class InstagramAPI:
 
     def _get_headers_for_reels(self, referer: Optional[str] = None) -> Dict[str, str]:
         """
-        _get_headers_for_reels produces headers needed for reels API calls.
+        Produces headers needed for reels API calls.
 
         Requires a previously obtained CSRF token.
 
         **Parameters:**
-        - `[referer]`: Optional referer URL for reels.
+        - `[referer]`: Optional referer URL for reels requests.
 
         **Returns:**
-        - Dictionary of HTTP headers for reels requests.
+        - Dictionary of HTTP headers with CSRF token for reels requests.
 
         **Raises:**
-        - Exception: If CSRF token is missing; perform a GET request first.
+        - `Exception`: If CSRF token is missing (perform a GET request first).
         """
         headers: Dict[str, str] = self._get_default_headers(referer)
         if self.csrf_token:
@@ -163,9 +165,11 @@ class InstagramAPI:
             return headers
         raise Exception("CSRF Token is missing; perform a GET request first")
 
-    def _fetch_reels(self, payload: Dict[str, Any], referer: str) -> Optional[Dict]:
+    def _fetch_reels(
+        self, payload: Dict[str, Any], referer: str
+    ) -> Optional[Dict[str, Any]]:
         """
-        _fetch_reels sends a POST request to retrieve reels data.
+        Sends a POST request to retrieve reels data.
 
         **Parameters:**
         - `[payload]`: Dictionary of data for the reels request.
@@ -182,9 +186,9 @@ class InstagramAPI:
             data=payload,
         )
 
-    def get_user_base_data(self, username: str) -> Optional[Dict]:
+    def get_user_base_data(self, username: str) -> Optional[Dict[str, Any]]:
         """
-        get_user_base_data fetches profile base data for a provided username.
+        Fetches profile base data for a given username.
 
         **Parameters:**
         - `[username]`: Instagram username.
@@ -197,19 +201,19 @@ class InstagramAPI:
             referer=f"{self.BASE_URL}/{username}/"
         )
         params: Dict[str, str] = {"username": username}
-        response: Optional[Dict] = self._handle_request(
+        response: Optional[Dict[str, Any]] = self._handle_request(
             "get", url, headers=headers, params=params
         )
 
-        if response is None or type(response) is not dict:
+        if not isinstance(response, dict):
             return None
-        if "data" in response:
-            return response
-        return None
+        return response if "data" in response else None
 
-    def get_user_paginated_data(self, user_id: str, end_cursor: str) -> Optional[Dict]:
+    def get_user_paginated_data(
+        self, user_id: str, end_cursor: str
+    ) -> Optional[Dict[str, Any]]:
         """
-        get_user_paginated_data retrieves paginated media data for a user.
+        Retrieves paginated media data for a user.
 
         **Parameters:**
         - `[user_id]`: Instagram user ID.
@@ -224,30 +228,28 @@ class InstagramAPI:
             "variables": json.dumps(variables),
         }
         headers: Dict[str, str] = self._get_default_headers()
-        response: Optional[Dict] = self._handle_request(
+        response: Optional[Dict[str, Any]] = self._handle_request(
             "get", self.GRAPHQL_URL, headers=headers, params=params
         )
 
-        if response is None or type(response) is not dict:
+        if not isinstance(response, dict):
             return None
-        if "data" in response:
-            return response
-        return None
+        return response if "data" in response else None
 
     def get_user_first_reels(
         self, username: str, page_size: int = 11
-    ) -> Optional[Dict]:
+    ) -> Optional[Dict[str, Any]]:
         """
-        get_user_first_reels retrieves the initial set of reels for a given user.
+        Retrieves initial set of reels for a given user.
 
         **Parameters:**
         - `[username]`: Instagram username.
-        - `[page_size]`: Number of reels to fetch per request.
+        - `[page_size]`: Number of reels to fetch per request (defaults to 11).
 
         **Returns:**
         - Dictionary with reels data if successful, otherwise None.
         """
-        base_user_data: Optional[Dict] = self.get_user_base_data(username)
+        base_user_data: Optional[Dict[str, Any]] = self.get_user_base_data(username)
         user_id: Optional[str] = self._get_user_id(base_user_data)
         if not user_id:
             return None
@@ -258,16 +260,17 @@ class InstagramAPI:
             "include_feed_video": "true",
         }
         referer: str = f"{self.BASE_URL}/{username}/reels/"
-        response: Optional[Dict] = self._fetch_reels(payload, referer)
-        if response is None and type(response) is not dict:
-            return None
-        if "items" in response:
-            return response
-        return None
+        response: Optional[Dict[str, Any]] = self._fetch_reels(payload, referer)
 
-    def get_user_paginated_reels(self, max_id: str, username: str) -> Optional[Dict]:
+        if not isinstance(response, dict):
+            return None
+        return response if "items" in response else None
+
+    def get_user_paginated_reels(
+        self, max_id: str, username: str
+    ) -> Optional[Dict[str, Any]]:
         """
-        get_user_paginated_reels retrieves the next page of reels for a given user.
+        Retrieves the next page of reels for a given user.
 
         **Parameters:**
         - `[max_id]`: Pagination identifier to fetch next reels.
@@ -276,7 +279,7 @@ class InstagramAPI:
         **Returns:**
         - Dictionary with reels data if successful, otherwise None.
         """
-        base_data: Optional[Dict] = self.get_user_base_data(username)
+        base_data: Optional[Dict[str, Any]] = self.get_user_base_data(username)
         user_id: Optional[str] = self._get_user_id(base_data)
         if not user_id:
             return None
@@ -288,9 +291,8 @@ class InstagramAPI:
             "max_id": max_id,
         }
         referer: str = f"{self.BASE_URL}/{username}/reels/"
-        response: Optional[Dict] = self._fetch_reels(payload, referer)
-        if response is None and type(response) is not dict:
+        response: Optional[Dict[str, Any]] = self._fetch_reels(payload, referer)
+
+        if not isinstance(response, dict):
             return None
-        if "items" in response:
-            return response
-        return None
+        return response if "items" in response else None
