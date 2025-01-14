@@ -84,7 +84,6 @@ single_scraper = ReelScraper(timeout=30, proxy=None, logger_manager=logger)
 # Initialize the multi-scraper with the data saver and custom concurrency settings
 multi_scraper = ReelMultiScraper(
     scraper=single_scraper,
-    logger_manager=logger,
     max_workers=5,      # Number of threads
     data_saver=data_saver
 )

@@ -147,7 +147,6 @@ Fetched 20 reels!
 The **`ReelMultiScraper`** extends the single-user scraper to support concurrent processing across multiple Instagram accounts. It uses Python’s `ThreadPoolExecutor` for parallel requests, and it seamlessly integrates with:
 
 - A pre-configured **`ReelScraper`** for data retrieval.
-- **`LoggerManager`** for logging scraping events.
 - **`DataSaver`** for optional persistence of the gathered reel data.
 - **`AccountManager`** to load account names from a provided file during the scraping process.
 
@@ -161,7 +160,6 @@ Think of it as your multi-lane highway for scraping, where each thread is a lane
 def __init__(
     self,
     scraper: ReelScraper,
-    logger_manager: Optional[LoggerManager] = None,
     max_workers: int = 5,
     data_saver: Optional[DataSaver] = None,
 ) -> None:
@@ -224,9 +222,6 @@ def scrape_accounts(
 - **`scraper`** (`ReelScraper`):  
   The core scraping instance used to fetch reels for each account.
 
-- **`logger_manager`** (`LoggerManager`, optional):  
-  Logs multi-scraper events, especially when the underlying `ReelScraper` does not handle logging.
-
 - **`max_workers`** (`int`):  
   Dictates the size of the thread pool for parallel account scraping.
 
@@ -252,7 +247,6 @@ my_scraper = ReelScraper(timeout=10, proxy=None, logger_manager=logger)
 # Initialize ReelMultiScraper with the pre-configured ReelScraper
 multi_scraper = ReelMultiScraper(
     scraper=my_scraper,
-    logger_manager=logger,
     max_workers=5,
     data_saver=data_saver
 )
