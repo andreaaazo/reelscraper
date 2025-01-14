@@ -1,6 +1,6 @@
 import concurrent.futures
 from typing import List, Dict, Optional
-from reelscraper.utils import LoggerManager, AccountManager, DataSaver
+from reelscraper.utils import AccountManager, DBManager
 from reelscraper import ReelScraper
 
 
@@ -17,7 +17,7 @@ class ReelMultiScraper:
         self,
         scraper: ReelScraper,
         max_workers: int = 5,
-        data_saver: Optional[DataSaver] = None,
+        db_manager: Optional[DBManager] = None,
     ) -> None:
         """
         Initializes [MultiAccountScraper] by loading account names and storing references.
@@ -28,14 +28,14 @@ class ReelMultiScraper:
         """
         self.scraper: ReelScraper = scraper
         self.max_workers: int = max_workers
-        self.data_saver: Optional[DataSaver] = data_saver
+        self.db_manager: Optional[DBManager] = db_manager
 
     def scrape_accounts(
         self,
         accounts_file: str,
         max_posts_per_profile: Optional[int] = None,
         max_retires_per_profile: Optional[int] = None,
-    ) -> List[Dict]:
+    ) -> Optional[List[Dict]]:
         """
         Scrapes reels for each account in parallel and returns results in a dictionary.
 
@@ -43,8 +43,10 @@ class ReelMultiScraper:
         """
         account_manager: AccountManager = AccountManager(accounts_file)
         accounts: List[str] = account_manager.get_accounts()
+        reels_count: int = int()
 
-        results: List[Dict] = list()
+        if self.db_manager is None:
+            all_results: List[Dict] = []
 
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.max_workers
@@ -64,19 +66,26 @@ class ReelMultiScraper:
                 username = future_to_username[future]
                 try:
                     reels = future.result()
-                    results += reels
+
+                    if self.db_manager is not None:
+                        self.db_manager.store_reels(username, reels)
+                        if self.scraper.logger_manager is not None:
+                            self.scraper.logger_manager.log_saving_scraping_results(
+                                len(reels), username
+                            )
+                    else:
+                        all_results += reels
+
+                    reels_count += len(reels)
+
                 except Exception:
                     pass
 
-        if self.data_saver is not None:
-            if self.scraper.logger_manager is not None:
-                self.scraper.logger_manager.log_saving_scraping_results(
-                    self.data_saver.full_path
-                )
-            self.data_saver.save(results)
         if self.scraper.logger_manager is not None:
             self.scraper.logger_manager.log_finish_multiscraping(
-                len(results), len(accounts)
+                reels_count, len(accounts)
             )
+        if self.db_manager is None:
+            return all_results
 
-        return results
+        return None

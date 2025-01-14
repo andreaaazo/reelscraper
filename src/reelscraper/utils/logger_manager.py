@@ -164,8 +164,10 @@ class LoggerManager:
             f"SUCCESS | Scraped {reel_count} Reels from {accounts_count} Accounts"
         )
 
-    def log_saving_scraping_results(self, file_path: str) -> None:
+    def log_saving_scraping_results(self, reels_saved_count: int, account: str) -> None:
         """
         Logs an informational message indicating the saving of the scraping results
         """
-        self.logger.info(f"Saving scraping results | File Path: {file_path}")
+        self.logger.info(
+            f"Saving scraping results | Saving {reels_saved_count} Reels from {account}"
+        )
