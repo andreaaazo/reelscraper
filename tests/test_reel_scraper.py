@@ -222,7 +222,10 @@ class TestReelScraper(unittest.TestCase):
 
         with self.assertRaises(Exception) as context:
             rs.get_user_reels(self.username, max_posts=1, max_retries=2)
-        self.assertIn("Error fetching reels for username", str(context.exception))
+        self.assertIn(
+            f"Failed to fetch reels for '{self.username}' after 2 retries.",
+            str(context.exception),
+        )
         self.assertIn(
             ("error", self.username),
             self.logger.calls,
@@ -458,7 +461,10 @@ class TestReelScraper(unittest.TestCase):
 
         with self.assertRaises(Exception) as context:
             rs.get_user_reels(self.username, max_posts=1, max_retries=2)
-        self.assertIn("Error fetching reels for username", str(context.exception))
+        self.assertIn(
+            f"Failed to fetch reels for '{self.username}' after 2 retries.",
+            str(context.exception),
+        )
         # Check that error was logged.
         self.assertIn(("error", self.username), self.logger.calls)
 
